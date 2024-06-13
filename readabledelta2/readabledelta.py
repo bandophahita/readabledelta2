@@ -8,13 +8,15 @@ https://github.com/wimglenn/readabledelta/blob/master/readabledelta.py
 from __future__ import annotations
 
 import warnings
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from dateutil.relativedelta import relativedelta
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+UTC = timezone.utc
 
 NORMAL = 0
 SHORT = 1

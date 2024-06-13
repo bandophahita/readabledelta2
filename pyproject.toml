@@ -36,7 +36,7 @@ extend-exclude = '''
 
 
 [tool.ruff]
-target-version = "py311"  # minimum supported version
+target-version = "py310"  # minimum supported version
 line-length = 88  # same as Black.
 extend-exclude = [
     "docs",
@@ -190,7 +190,7 @@ classifiers = [
 # so we dont have two different sets of package versions to update.
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 python-dateutil = "*"
 
 

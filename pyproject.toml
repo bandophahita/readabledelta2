@@ -151,8 +151,21 @@ split-on-trailing-comma = false
 "__version__.py" = ["D"]
 
 
+[tool.coverage.run]
+source = ["readabledelta2"]
+omit = [
+    "/tests/*",
+]
+
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "pass",
+]
+
 ################################################################################
-#                 END OF BOILERPLATE ScreenPyHQ CONFIGURATIONS                 #
+#                 END OF BOILERPLATE CONFIGURATIONS                 #
 ################################################################################
 
 [tool.poetry]

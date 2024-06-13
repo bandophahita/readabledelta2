@@ -5,8 +5,10 @@ from datetime import timedelta
 import pytest
 from dateutil.relativedelta import relativedelta
 
-from readabledelta2 import ABBREV, NORMAL, SHORT, from_relativedelta, to_string
+from readabledelta2 import Style, from_relativedelta, to_string
 from readabledelta2.readabledelta import (
+    RDUnit,
+    TDUnit,
     extract_units,
     split_relativedelta_units,
     split_timedelta_units,
@@ -16,167 +18,173 @@ from readabledelta2.readabledelta import (
 class TestSplitUnitsTimedelta:
     def test_split_units(self) -> None:
         ans = {
-            "years": 0,
-            "weeks": 0,
-            "days": 0,
-            "hours": 0,
-            "minutes": 0,
-            "seconds": 0,
-            "microseconds": 0,
-            "milliseconds": 0,
+            TDUnit.YEARS: 0,
+            TDUnit.WEEKS: 0,
+            TDUnit.DAYS: 0,
+            TDUnit.HOURS: 0,
+            TDUnit.MINUTES: 0,
+            TDUnit.SECONDS: 0,
+            TDUnit.MICROSECONDS: 0,
+            TDUnit.MILLISECONDS: 0,
         }
         delta = timedelta(weeks=53, hours=1, minutes=1)
         assert split_timedelta_units(delta) == {
             **ans,
-            "years": 1,
-            "days": 6,
-            "hours": 1,
-            "minutes": 1,
+            TDUnit.YEARS: 1,
+            TDUnit.DAYS: 6,
+            TDUnit.HOURS: 1,
+            TDUnit.MINUTES: 1,
         }
-        assert split_timedelta_units(delta, ("weeks", "days")) == {**ans, "weeks": 53}
+        assert split_timedelta_units(delta, (TDUnit.WEEKS, TDUnit.DAYS)) == {
+            **ans,
+            TDUnit.WEEKS: 53,
+        }
         assert split_timedelta_units(delta, ("days", "hours")) == {
             **ans,
-            "days": 371,
-            "hours": 1,
+            TDUnit.DAYS: 371,
+            TDUnit.HOURS: 1,
         }
-        assert split_timedelta_units(delta, ("minutes")) == {
+        assert split_timedelta_units(delta, (TDUnit.MINUTES,)) == {
             **ans,
-            "minutes": 534301,
+            TDUnit.MINUTES: 534301,
         }
-        assert split_timedelta_units(delta, ("seconds")) == {
+        assert split_timedelta_units(delta, (TDUnit.SECONDS,)) == {
             **ans,
-            "seconds": 32058060,
+            TDUnit.SECONDS: 32058060,
         }
-        assert split_timedelta_units(delta, ("days", "minutes")) == {
+        assert split_timedelta_units(delta, (TDUnit.DAYS, TDUnit.MINUTES)) == {
             **ans,
-            "days": 371,
-            "minutes": 61,
+            TDUnit.DAYS: 371,
+            TDUnit.MINUTES: 61,
         }
-        assert split_timedelta_units(delta, ("days", "seconds")) == {
+        assert split_timedelta_units(delta, (TDUnit.DAYS, TDUnit.SECONDS)) == {
             **ans,
-            "days": 371,
-            "seconds": 3660,
+            TDUnit.DAYS: 371,
+            TDUnit.SECONDS: 3660,
         }
-        assert split_timedelta_units(delta, ("days", "milliseconds")) == {
+        assert split_timedelta_units(delta, (TDUnit.DAYS, TDUnit.MILLISECONDS)) == {
             **ans,
-            "days": 371,
-            "milliseconds": 3660000,
+            TDUnit.DAYS: 371,
+            TDUnit.MILLISECONDS: 3660000,
         }
-        assert split_timedelta_units(delta, ("weeks", "microseconds")) == {
+        assert split_timedelta_units(delta, (TDUnit.WEEKS, TDUnit.MICROSECONDS)) == {
             **ans,
-            "weeks": 53,
-            "microseconds": 3660000000,
+            TDUnit.WEEKS: 53,
+            TDUnit.MICROSECONDS: 3660000000,
         }
 
 
 class TestSplitUnitsRelativedelta:
     def test_split_units(self) -> None:
         ans = {
-            "years": 0,
-            "months": 0,
-            "weeks": 0,
-            "days": 0,
-            "hours": 0,
-            "minutes": 0,
-            "seconds": 0,
-            "microseconds": 0,
+            RDUnit.YEARS: 0,
+            RDUnit.MONTHS: 0,
+            RDUnit.WEEKS: 0,
+            RDUnit.DAYS: 0,
+            RDUnit.HOURS: 0,
+            RDUnit.MINUTES: 0,
+            RDUnit.SECONDS: 0,
+            RDUnit.MICROSECONDS: 0,
         }
+
         delta = relativedelta(months=4, days=14)
         assert split_relativedelta_units(delta) == {
             **ans,
-            "months": 4,
-            "weeks": 2,
+            RDUnit.MONTHS: 4,
+            RDUnit.WEEKS: 2,
         }
         delta = relativedelta(weeks=1)
         assert split_relativedelta_units(delta) == {
             **ans,
-            "weeks": 1,
+            RDUnit.WEEKS: 1,
         }
         delta = relativedelta(weeks=6)
         assert split_relativedelta_units(delta) == {
             **ans,
-            "weeks": 6,
+            RDUnit.WEEKS: 6,
         }
         delta = relativedelta(months=1)
         assert split_relativedelta_units(delta) == {
             **ans,
-            "months": 1,
+            RDUnit.MONTHS: 1,
         }
         delta = relativedelta(months=15)
         assert split_relativedelta_units(delta) == {
             **ans,
-            "years": 1,
-            "months": 3,
+            RDUnit.YEARS: 1,
+            RDUnit.MONTHS: 3,
         }
         delta = relativedelta(days=32)
         assert split_relativedelta_units(delta) == {
             **ans,
-            "weeks": 4,
-            "days": 4,
+            RDUnit.WEEKS: 4,
+            RDUnit.DAYS: 4,
         }
         delta = relativedelta(years=1)
-        assert split_relativedelta_units(delta, ["months"]) == {
+        assert split_relativedelta_units(delta, (RDUnit.MONTHS,)) == {
             **ans,
-            "months": 12,
+            RDUnit.MONTHS: 12,
         }
         delta = relativedelta(weeks=1)
-        assert split_relativedelta_units(delta, ["days"]) == {
+        assert split_relativedelta_units(delta, (RDUnit.DAYS,)) == {
             **ans,
-            "days": 7,
+            RDUnit.DAYS: 7,
         }
         delta = relativedelta(years=1, months=2, weeks=53, hours=1, minutes=1)
         assert split_relativedelta_units(delta) == {
             **ans,
-            "years": 1,
-            "months": 2,
-            "weeks": 53,
-            "hours": 1,
-            "minutes": 1,
+            RDUnit.YEARS: 1,
+            RDUnit.MONTHS: 2,
+            RDUnit.WEEKS: 53,
+            RDUnit.HOURS: 1,
+            RDUnit.MINUTES: 1,
         }
-        assert split_relativedelta_units(delta, ("weeks", "days")) == {
+        assert split_relativedelta_units(delta, (RDUnit.WEEKS, RDUnit.DAYS)) == {
             **ans,
-            "months": 14,
-            "weeks": 53,
+            RDUnit.MONTHS: 14,
+            RDUnit.WEEKS: 53,
         }
-        assert split_relativedelta_units(delta, ("days", "hours")) == {
+        assert split_relativedelta_units(delta, (RDUnit.DAYS, RDUnit.HOURS)) == {
             **ans,
-            "months": 14,
-            "days": 371,
-            "hours": 1,
+            RDUnit.MONTHS: 14,
+            RDUnit.DAYS: 371,
+            RDUnit.HOURS: 1,
         }
-        assert split_relativedelta_units(delta, ("minutes",)) == {
+        assert split_relativedelta_units(delta, (RDUnit.MINUTES,)) == {
             **ans,
-            "months": 14,
-            "minutes": 534301,
+            RDUnit.MONTHS: 14,
+            RDUnit.MINUTES: 534301,
         }
-        assert split_relativedelta_units(delta, ("seconds",)) == {
+        assert split_relativedelta_units(delta, (RDUnit.SECONDS,)) == {
             **ans,
-            "months": 14,
-            "seconds": 32058060,
+            RDUnit.MONTHS: 14,
+            RDUnit.SECONDS: 32058060,
         }
-        assert split_relativedelta_units(delta, ("days", "minutes")) == {
+        assert split_relativedelta_units(delta, (RDUnit.DAYS, RDUnit.MINUTES)) == {
             **ans,
-            "months": 14,
-            "days": 371,
-            "minutes": 61,
+            RDUnit.MONTHS: 14,
+            RDUnit.DAYS: 371,
+            RDUnit.MINUTES: 61,
         }
-        assert split_relativedelta_units(delta, ("days", "seconds")) == {
+        assert split_relativedelta_units(delta, (RDUnit.DAYS, RDUnit.SECONDS)) == {
             **ans,
-            "months": 14,
-            "days": 371,
-            "seconds": 3660,
+            RDUnit.MONTHS: 14,
+            RDUnit.DAYS: 371,
+            RDUnit.SECONDS: 3660,
         }
-        assert split_relativedelta_units(delta, ("days", "microseconds")) == {
+        assert split_relativedelta_units(delta, (RDUnit.DAYS, RDUnit.MICROSECONDS)) == {
             **ans,
-            "months": 14,
-            "days": 371,
-            "microseconds": 3660000000,
+            RDUnit.MONTHS: 14,
+            RDUnit.DAYS: 371,
+            RDUnit.MICROSECONDS: 3660000000,
         }
-        assert split_relativedelta_units(delta, ("weeks", "microseconds")) == {
+        assert split_relativedelta_units(
+            delta, (RDUnit.WEEKS, RDUnit.MICROSECONDS)
+        ) == {
             **ans,
-            "months": 14,
-            "weeks": 53,
-            "microseconds": 3660000000,
+            RDUnit.MONTHS: 14,
+            RDUnit.WEEKS: 53,
+            RDUnit.MICROSECONDS: 3660000000,
         }
 
 
@@ -314,41 +322,43 @@ class TestTimedelta:
     # fmt: on
     # @formatter:on
 
-    def _td_signed(self, idx: int) -> None:
+    def _td_signed(self, style: Style) -> None:
         for expected, delta in self.cases:
-            assert to_string(delta, include_sign=True, short=idx) == expected[idx]
+            assert to_string(delta, include_sign=True, style=style) == expected[style]
 
         for expected, delta in self.cases:
             assert (
-                to_string(-delta, include_sign=True, short=idx) == f"-{expected[idx]}"
+                to_string(-delta, include_sign=True, style=style)
+                == f"-{expected[style]}"
             )
 
-    def _td_unsigned(self, idx: int) -> None:
+    def _td_unsigned(self, style: Style) -> None:
         for expected, delta in self.cases:
-            assert to_string(delta, include_sign=False, short=idx) == expected[idx]
+            assert to_string(delta, include_sign=False, style=style) == expected[style]
 
         for expected, delta in self.cases:
             assert (
-                to_string(-delta, include_sign=False, short=idx) == f"{expected[idx]}"
+                to_string(-delta, include_sign=False, style=style)
+                == f"{expected[style]}"
             )
 
     def test_signed_normal(self) -> None:
-        self._td_signed(NORMAL)
+        self._td_signed(Style.NORMAL)
 
     def test_unsigned_normal(self) -> None:
-        self._td_unsigned(NORMAL)
+        self._td_unsigned(Style.NORMAL)
 
     def test_signed_short(self) -> None:
-        self._td_signed(SHORT)
+        self._td_signed(Style.SHORT)
 
     def test_usigned_short(self) -> None:
-        self._td_unsigned(SHORT)
+        self._td_unsigned(Style.SHORT)
 
     def test_signed_abbrev(self) -> None:
-        self._td_signed(ABBREV)
+        self._td_signed(Style.ABBREV)
 
     def test_unsigned_abbrev(self) -> None:
-        self._td_unsigned(ABBREV)
+        self._td_unsigned(Style.ABBREV)
 
     def test_show_zero(self) -> None:
         assert to_string(timedelta(weeks=60, hours=1), showzero=True) == (
@@ -358,11 +368,19 @@ class TestTimedelta:
 
     def test_to_string_using_relativedelta(self) -> None:
         with pytest.raises(TypeError):
-            to_string(relativedelta(hours=0), short=NORMAL)  # type: ignore[arg-type]
+            to_string(relativedelta(hours=0), style=Style.NORMAL)  # type: ignore[arg-type]
 
     def _td_keys(
         self,
-        key_cases: list[tuple[tuple[str, ...], str]],
+        # key_cases: list[tuple[tuple[TDUnit, ...], str]],
+        # key_cases: list[tuple[tuple[TDUnit, ...] | tuple[str, ...], str]],
+        # key_cases: list[tuple[tuple[TDUnit, ...] | tuple[T_tdkeys, ...], str]],
+        # key_cases: list[tuple[tuple[TDUnit | str, ...], str]],
+        # key_cases: list[tuple[tuple[TDUnit | T_tdkeys, ...], str]],
+        key_cases: (
+            list[tuple[tuple[TDUnit, ...], str]] | list[tuple[tuple[str, ...], str]]
+        ),
+        # key_cases: list[tuple[Sequence[TDUnit] | Sequence[T_tdkeys], ...], str],
         delta: timedelta,
         showzero: bool = False,
     ) -> None:
@@ -372,11 +390,11 @@ class TestTimedelta:
     def test_limited_keys(self) -> None:
         delta = timedelta(weeks=60, hours=1)
         key_cases = [
-            (("hours",), "10081 hours"),
-            (("days", "hours"), "420 days and 1 hour"),
-            (("minutes",), "604860 minutes"),
-            (("seconds",), "36291600 seconds"),
-            (("minutes", "seconds"), "604860 minutes"),
+            ((TDUnit.HOURS,), "10081 hours"),
+            ((TDUnit.DAYS, TDUnit.HOURS), "420 days and 1 hour"),
+            ((TDUnit.MINUTES,), "604860 minutes"),
+            ((TDUnit.SECONDS,), "36291600 seconds"),
+            ((TDUnit.MINUTES, TDUnit.SECONDS), "604860 minutes"),
         ]
         self._td_keys(key_cases, delta)
 
@@ -385,17 +403,17 @@ class TestTimedelta:
         # @formatter:off
         # fmt: off
         key_cases = [
-            (("days", "hours", "minutes", "seconds"),
+            ((TDUnit.DAYS, TDUnit.HOURS, TDUnit.MINUTES, TDUnit.SECONDS),
              "6 days, 23 hours, 59 minutes and 59 seconds"),
-            (("hours", "minutes", "seconds"),
+            ((TDUnit.HOURS, TDUnit.MINUTES, TDUnit.SECONDS),
              "167 hours, 59 minutes and 59 seconds"),
-            (("hours",),
+            ((TDUnit.HOURS,),
              "167 hours"),
-            (("minutes", "seconds"),
+            ((TDUnit.MINUTES, TDUnit.SECONDS),
              "10079 minutes and 59 seconds"),
-            (("seconds",),
+            ((TDUnit.SECONDS,),
              "604799 seconds"),
-            (("days", "seconds"),
+            ((TDUnit.DAYS, TDUnit.SECONDS),
              "6 days and 86399 seconds"),
         ]
         # fmt: on
@@ -452,7 +470,7 @@ class TestTimedelta:
 
     def test_invalid_keys(self) -> None:
         with pytest.raises(AssertionError):
-            to_string(timedelta(0), keys=["bogus"])
+            to_string(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
 
     def test_valid_keys(self) -> None:
         valid = (
@@ -471,9 +489,9 @@ class TestTimedelta:
 
 class TestExtractUnits:
     def test_extract_units(self) -> None:
-        assert ["days", "hours"] == extract_units(timedelta(hours=28))
-        assert ["hours", "minutes"] == extract_units(timedelta(minutes=90))
-        assert ["hours"] == extract_units(timedelta(minutes=60))
+        assert extract_units(timedelta(hours=28)) == (TDUnit.DAYS, TDUnit.HOURS)
+        assert extract_units(timedelta(minutes=90)) == (TDUnit.HOURS, TDUnit.MINUTES)
+        assert extract_units(timedelta(minutes=60)) == (TDUnit.HOURS,)
 
 
 class TestRelativedelta:
@@ -603,72 +621,73 @@ class TestRelativedelta:
     # fmt: on
 
     # not supported yet
-    def _rd_signed(self, idx: int) -> None:
+    def _rd_signed(self, style: Style) -> None:
         for expected, delta in self.rd_cases:
             assert (
-                from_relativedelta(delta, include_sign=True, short=idx) == expected[idx]
+                from_relativedelta(delta, include_sign=True, style=style)
+                == expected[style]
             )
 
-    def _rd_signed_negative(self, idx: int) -> None:
+    def _rd_signed_negative(self, style: Style) -> None:
         for expected, delta in self.rd_cases:
             assert (
-                from_relativedelta(-delta, include_sign=True, short=idx)
-                == f"-{expected[idx]}"
+                from_relativedelta(-delta, include_sign=True, style=style)
+                == f"-{expected[style]}"
             )
 
-    def _rd_unsigned(self, idx: int) -> None:
+    def _rd_unsigned(self, style: Style) -> None:
         for expected, delta in self.rd_cases:
             assert (
-                from_relativedelta(delta, include_sign=False, short=idx)
-                == expected[idx]
+                from_relativedelta(delta, include_sign=False, style=style)
+                == expected[style]
             )
 
-    def _rd_unsigned_negative(self, idx: int) -> None:
+    def _rd_unsigned_negative(self, style: Style) -> None:
         for expected, delta in self.rd_cases:
             assert (
-                from_relativedelta(-delta, include_sign=False, short=idx)
-                == f"{expected[idx]}"
+                from_relativedelta(-delta, include_sign=False, style=style)
+                == f"{expected[style]}"
             )
 
     def test_signed_normal(self) -> None:
-        self._rd_signed(NORMAL)
+        self._rd_signed(Style.NORMAL)
 
     def test_signed_negative_normal(self) -> None:
-        self._rd_signed_negative(NORMAL)
+        self._rd_signed_negative(Style.NORMAL)
 
     def test_signed_short(self) -> None:
-        self._rd_signed(SHORT)
+        self._rd_signed(Style.SHORT)
 
     def test_signed_negative_short(self) -> None:
-        self._rd_signed_negative(SHORT)
+        self._rd_signed_negative(Style.SHORT)
 
     def test_signed_abbrev(self) -> None:
-        self._rd_signed(ABBREV)
+        self._rd_signed(Style.ABBREV)
 
     def test_signed_negative_abbrev(self) -> None:
-        self._rd_signed_negative(ABBREV)
+        self._rd_signed_negative(Style.ABBREV)
 
     def test_unsigned_normal(self) -> None:
-        self._rd_unsigned(NORMAL)
+        self._rd_unsigned(Style.NORMAL)
 
     def test_unsigned_negative_normal(self) -> None:
-        self._rd_unsigned_negative(NORMAL)
+        self._rd_unsigned_negative(Style.NORMAL)
 
     def test_unsigned_short(self) -> None:
-        self._rd_unsigned(SHORT)
+        self._rd_unsigned(Style.SHORT)
 
     def test_unsigned_negative_short(self) -> None:
-        self._rd_unsigned_negative(SHORT)
+        self._rd_unsigned_negative(Style.SHORT)
 
     def test_unsigned_abbrev(self) -> None:
-        self._rd_unsigned(ABBREV)
+        self._rd_unsigned(Style.ABBREV)
 
     def test_unsigned_negative_abbrev(self) -> None:
-        self._rd_unsigned_negative(ABBREV)
+        self._rd_unsigned_negative(Style.ABBREV)
 
     def test_relativedelta_invalid_keys(self) -> None:
         with pytest.raises(AssertionError):
-            from_relativedelta(relativedelta(hours=0), keys=["bogus", "milliseconds"])
+            from_relativedelta(relativedelta(hours=0), keys=("bogus", "milliseconds"))
 
     def test_relativedelta_valid_keys(self) -> None:
         valid = (

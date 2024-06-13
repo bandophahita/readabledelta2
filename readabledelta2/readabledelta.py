@@ -9,18 +9,19 @@ from __future__ import annotations
 
 import warnings
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, TypeVar
+from enum import IntEnum, StrEnum
+from typing import Any, TypedDict, TypeVar
 
 from dateutil.relativedelta import relativedelta
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
 UTC = timezone.utc
 
-NORMAL = 0
-SHORT = 1
-ABBREV = 2
+
+class Style(IntEnum):
+    NORMAL = 0
+    SHORT = 1
+    ABBREV = 2
+
 
 YEARS = "years"
 MONTHS = "months"
@@ -33,12 +34,41 @@ MILLISECONDS = "milliseconds"
 MICROSECONDS = "microseconds"
 
 
-T_tunits = dict[str, dict[str, str]]
+class TDUnit(StrEnum):
+    YEARS = YEARS
+    WEEKS = WEEKS
+    DAYS = DAYS
+    HOURS = HOURS
+    MINUTES = MINUTES
+    SECONDS = SECONDS
+    MILLISECONDS = MILLISECONDS
+    MICROSECONDS = MICROSECONDS
+
+
+# months are included here because relativedelta knows how to handle it.
+class RDUnit(StrEnum):
+    YEARS = YEARS
+    MONTHS = MONTHS
+    WEEKS = WEEKS
+    DAYS = DAYS
+    HOURS = HOURS
+    MINUTES = MINUTES
+    SECONDS = SECONDS
+    MICROSECONDS = MICROSECONDS
+
+
+class UnitTranslation(TypedDict):
+    plural: str
+    singular: str
+    abbrev: str
+    short: str
+
+
 T_delta = relativedelta | timedelta
 
 # @formatter:off
 # fmt: off
-TIME_UNITS: T_tunits = {
+TIME_UNITS: dict[str, UnitTranslation] = {
     MICROSECONDS: {"plural": "microseconds", "singular": "microsecond", "abbrev": "µs", "short": "µsecs"},  # noqa: E501
     MILLISECONDS: {"plural": "milliseconds", "singular": "millisecond", "abbrev": "ms", "short": "msecs"},  # noqa: E501
     SECONDS     : {"plural": "seconds",      "singular": "second",      "abbrev": "s",  "short": "secs"},  # noqa: E501
@@ -48,32 +78,9 @@ TIME_UNITS: T_tunits = {
     WEEKS       : {"plural": "weeks",        "singular": "week",        "abbrev": "W",  "short": "wks"},  # noqa: E501
     MONTHS      : {"plural": "months",       "singular": "month",       "abbrev": "M",  "short": "mnths"},  # noqa: E501
     YEARS       : {"plural": "years",        "singular": "year",        "abbrev": "Y",  "short": "yrs"},  # noqa: E501
-            }
+}
 # fmt: on
 # @formatter:on
-
-
-TIMEDELTA_ALLOWED_KEYS = (
-    YEARS,
-    WEEKS,
-    DAYS,
-    HOURS,
-    MINUTES,
-    SECONDS,
-    MILLISECONDS,
-    MICROSECONDS,
-)
-# months are included here because relativedelta knows how to handle it.
-RELATIVEDELTA_ALLOWED_KEYS = (
-    YEARS,
-    MONTHS,
-    WEEKS,
-    DAYS,
-    HOURS,
-    MINUTES,
-    SECONDS,
-    MICROSECONDS,
-)
 
 
 class ReadableDelta(timedelta):
@@ -105,16 +112,16 @@ T = TypeVar("T", bound=ReadableDelta)
 
 ################################################################################
 def split_timedelta_units(
-    delta: timedelta, keys: Sequence[str] | None = None
-) -> dict[str, int]:
+    delta: timedelta, keys: tuple[TDUnit | str, ...] = tuple(TDUnit)
+) -> dict[TDUnit, int]:
     """
 
     :param timedelta delta:
     :param keys: array of time magnitudes to be used for output
     :return:
     """
-    if keys is None:
-        keys = TIMEDELTA_ALLOWED_KEYS
+    keys = tuple(set(keys))
+    assert set(keys).issubset(tuple(TDUnit)), f"keys can only be {tuple(TDUnit)}"
 
     delta = abs(delta)
 
@@ -124,67 +131,63 @@ def split_timedelta_units(
     seconds = delta.seconds
     microseconds = delta.microseconds
 
-    if YEARS in keys:
-        data[YEARS], days = divmod(days, 365)
+    if TDUnit.YEARS in keys:
+        data[TDUnit.YEARS], days = divmod(days, 365)
     else:
-        data[YEARS] = 0
+        data[TDUnit.YEARS] = 0
 
-    if WEEKS in keys:
-        data[WEEKS], days = divmod(days, 7)
+    if TDUnit.WEEKS in keys:
+        data[TDUnit.WEEKS], days = divmod(days, 7)
     else:
-        data[WEEKS] = 0
+        data[TDUnit.WEEKS] = 0
 
-    if DAYS in keys:
-        data[DAYS] = days
+    if TDUnit.DAYS in keys:
+        data[TDUnit.DAYS] = days
     else:
-        data[DAYS] = 0
+        data[TDUnit.DAYS] = 0
         seconds += days * 86400  # 24 * 60 * 60
 
-    if HOURS in keys:
-        data[HOURS], seconds = divmod(seconds, 60 * 60)
+    if TDUnit.HOURS in keys:
+        data[TDUnit.HOURS], seconds = divmod(seconds, 60 * 60)
     else:
-        data[HOURS] = 0
+        data[TDUnit.HOURS] = 0
 
-    if MINUTES in keys:
-        data[MINUTES], seconds = divmod(seconds, 60)
+    if TDUnit.MINUTES in keys:
+        data[TDUnit.MINUTES], seconds = divmod(seconds, 60)
     else:
-        data[MINUTES] = 0
+        data[TDUnit.MINUTES] = 0
 
-    if SECONDS in keys:
-        data[SECONDS] = seconds
+    if TDUnit.SECONDS in keys:
+        data[TDUnit.SECONDS] = seconds
     else:
-        data[SECONDS] = 0
+        data[TDUnit.SECONDS] = 0
         microseconds += seconds * 1000000  # 1000 * 1000
 
-    if MILLISECONDS in keys:
-        data[MILLISECONDS], microseconds = divmod(microseconds, 1000)
+    if TDUnit.MILLISECONDS in keys:
+        data[TDUnit.MILLISECONDS], microseconds = divmod(microseconds, 1000)
     else:
-        data[MILLISECONDS] = 0
+        data[TDUnit.MILLISECONDS] = 0
 
-    if MICROSECONDS in keys:
-        data[MICROSECONDS] = microseconds
+    if TDUnit.MICROSECONDS in keys:
+        data[TDUnit.MICROSECONDS] = microseconds
     else:
-        data[MICROSECONDS] = 0
+        data[TDUnit.MICROSECONDS] = 0
 
     return data
 
 
 ################################################################################
 def split_relativedelta_units(
-    delta: relativedelta, keys: Sequence[str] | None = None
-) -> dict[str, int]:
+    delta: relativedelta, keys: tuple[RDUnit | str, ...] = tuple(RDUnit)
+) -> dict[RDUnit, int]:
     """
 
     :param delta:
     :param keys: array of time magnitudes to be used for output
     :return:
     """
-    if keys is None:
-        keys = RELATIVEDELTA_ALLOWED_KEYS
-    else:
-        assert set(keys).issubset(
-            RELATIVEDELTA_ALLOWED_KEYS
-        ), f"keys can only be {RELATIVEDELTA_ALLOWED_KEYS}"
+    keys = tuple(set(keys))
+    assert set(keys).issubset(tuple(RDUnit)), f"keys can only be {tuple(RDUnit)}"
 
     delta = abs(delta)
 
@@ -200,54 +203,54 @@ def split_relativedelta_units(
 
     # years are relative due to leapyear.... so unless they are in the delta..
     # we won't calculate them
-    if YEARS in keys:
-        data[YEARS] = years
+    if RDUnit.YEARS in keys:
+        data[RDUnit.YEARS] = years
     else:
-        data[YEARS] = 0
+        data[RDUnit.YEARS] = 0
         months += years * 12
 
     # it's impossible to filter out months because there is no way to
     # convert them to smaller units without the relative dates.
-    if MONTHS not in keys and months:
+    if RDUnit.MONTHS not in keys and months:
         warnings.warn(
             "Cannot reduce months down to smaller units", Warning, stacklevel=1
         )
 
-    data[MONTHS] = months
+    data[RDUnit.MONTHS] = months
 
-    if WEEKS in keys:
-        data[WEEKS], days = divmod(days, 7)
+    if RDUnit.WEEKS in keys:
+        data[RDUnit.WEEKS], days = divmod(days, 7)
     else:
-        data[WEEKS] = 0
+        data[RDUnit.WEEKS] = 0
 
-    if DAYS in keys:
-        data[DAYS] = days
+    if RDUnit.DAYS in keys:
+        data[RDUnit.DAYS] = days
     else:
-        data[DAYS] = 0
+        data[RDUnit.DAYS] = 0
         hours += days * 24
 
-    if HOURS in keys:
-        data[HOURS] = hours
+    if RDUnit.HOURS in keys:
+        data[RDUnit.HOURS] = hours
     else:
-        data[HOURS] = 0
+        data[RDUnit.HOURS] = 0
         minutes += hours * 60
 
-    if MINUTES in keys:
-        data[MINUTES] = minutes
+    if RDUnit.MINUTES in keys:
+        data[RDUnit.MINUTES] = minutes
     else:
-        data[MINUTES] = 0
+        data[RDUnit.MINUTES] = 0
         seconds += minutes * 60
 
-    if SECONDS in keys:
-        data[SECONDS] = seconds
+    if RDUnit.SECONDS in keys:
+        data[RDUnit.SECONDS] = seconds
     else:
-        data[SECONDS] = 0
+        data[RDUnit.SECONDS] = 0
         microseconds += seconds * 1000000  # 1000 * 1000
 
-    if MICROSECONDS in keys:
-        data[MICROSECONDS] = microseconds
+    if RDUnit.MICROSECONDS in keys:
+        data[RDUnit.MICROSECONDS] = microseconds
     else:
-        data[MICROSECONDS] = 0
+        data[RDUnit.MICROSECONDS] = 0
 
     return data
 
@@ -262,8 +265,8 @@ def is_negative_relativedelta(
 ################################################################################
 def to_string(
     delta: timedelta,
-    short: int = NORMAL,
-    keys: Sequence[str] | None = None,
+    style: Style = Style.NORMAL,
+    keys: tuple[TDUnit | str, ...] | None = None,
     *,
     include_sign: bool = True,
     showzero: bool = False,
@@ -272,7 +275,7 @@ def to_string(
     Create Human readable timedelta string.
 
     :param timedelta | ReadableDelta delta:
-    :param short: 1: uses short names, 2: uses abbreviation names
+    :param style: 1: uses short names, 2: uses abbreviation names
     :param include_sign: false will prevent sign from appearing
             allows you to create negative deltas but still have a human sentence like
             '2 hours ago' instead of '-2 hours ago'
@@ -286,40 +289,37 @@ def to_string(
     delta = abs(delta)
 
     if keys is None:
-        keys = TIMEDELTA_ALLOWED_KEYS
+        keys = tuple(TDUnit)
     else:
-        assert set(keys).issubset(
-            TIMEDELTA_ALLOWED_KEYS
-        ), f"keys can only be {TIMEDELTA_ALLOWED_KEYS}"
+        keys = tuple(set(keys))
+        assert set(keys).issubset(tuple(TDUnit)), f"keys can only be {tuple(TDUnit)}"
 
     data = split_timedelta_units(delta, keys)
 
     output = []
-    for k in keys:
-        val = data[k]
+    for k, val in data.items():
+        if k not in keys:
+            continue
         if val == 0 and showzero is False:
             continue
         singular = val == 1
-        tu = TIME_UNITS.get(k)
-        if tu is None:
-            msg = f"Invalid key {k}"
-            raise ValueError(msg)
+        tu = TIME_UNITS.__getitem__(k)
 
-        if short == NORMAL:
+        if style == Style.NORMAL:
             unit = tu.get("plural")
-        elif short == SHORT:
+        elif style == Style.SHORT:
             unit = tu.get("short")
-        elif short == ABBREV:
+        elif style == Style.ABBREV:
             unit = tu.get("abbrev")
         else:
-            msg = f"Invalid argument {short}"
+            msg = f"Invalid argument {style}"
             raise ValueError(msg)
         if unit is None:
-            msg = f"Invalid argument {short}"
+            msg = f"Invalid argument {style}"
             raise ValueError(msg)
 
         # make magnitude singular
-        if short in [NORMAL, SHORT] and singular:
+        if style in [Style.NORMAL, Style.SHORT] and singular:
             unit = unit[:-1]
 
         output.append(f"{sign}{val} {unit}")
@@ -339,28 +339,33 @@ def to_string(
 
 
 ################################################################################
-def extract_units(delta: timedelta, keys: Sequence[str] | None = None) -> list[str]:
+def extract_units(
+    delta: timedelta, keys: tuple[TDUnit, ...] = tuple(TDUnit)
+) -> tuple[TDUnit, ...]:
     """
     Given a timedelta, determine all the time magnitudes within said delta.
 
     :param timedelta delta:
     :return:
     """
-    if keys is None:
-        keys = TIMEDELTA_ALLOWED_KEYS
+    keys = tuple(set(keys))
+    assert set(keys).issubset(tuple(TDUnit)), f"keys can only be {tuple(TDUnit)}"
     data = split_timedelta_units(delta, keys)
     rkeys = []
-    for key in keys:
-        if data[key]:
+    for key, val in data.items():
+        if key not in keys:
+            continue
+
+        if val:
             rkeys.append(key)
-    return rkeys
+    return tuple(rkeys)
 
 
 ################################################################################
 def from_relativedelta(
     rdelta: relativedelta,
-    short: int = NORMAL,
-    keys: Sequence[str] | None = None,
+    style: Style = Style.NORMAL,
+    keys: tuple[RDUnit | str, ...] | None = None,
     *,
     include_sign: bool = True,
     showzero: bool = False,
@@ -369,7 +374,7 @@ def from_relativedelta(
     Create Human readable relativedelta string.
 
     :param ReadableDelta rdelta:
-    :param short: 1: uses short names, 2: uses abbreviation names
+    :param style: 1: uses short names, 2: uses abbreviation names
     :param include_sign: false will prevent sign from appearing
             allows you to create negative deltas but still have a human sentence like
             '2 hours ago' instead of '-2 hours ago'
@@ -383,17 +388,17 @@ def from_relativedelta(
     rdelta = abs(rdelta)
 
     if keys is None:
-        keys = RELATIVEDELTA_ALLOWED_KEYS
+        keys = tuple(RDUnit)
     else:
-        assert set(keys).issubset(
-            RELATIVEDELTA_ALLOWED_KEYS
-        ), f"keys can only be {RELATIVEDELTA_ALLOWED_KEYS}"
+        keys = tuple(set(keys))
+        assert set(keys).issubset(tuple(RDUnit)), f"keys can only be {tuple(RDUnit)}"
 
     data = split_relativedelta_units(rdelta, keys)
 
     output = []
-    for k in keys:
-        val = data[k]
+    for k, val in data.items():
+        if k not in keys:
+            continue
         if val == 0 and showzero is False:
             continue
         singular = val == 1
@@ -402,21 +407,21 @@ def from_relativedelta(
             msg = f"Invalid key {k}"
             raise ValueError(msg)
 
-        if short == NORMAL:
+        if style == Style.NORMAL:
             unit = tu.get("plural")
-        elif short == SHORT:
+        elif style == Style.SHORT:
             unit = tu.get("short")
-        elif short == ABBREV:
+        elif style == Style.ABBREV:
             unit = tu.get("abbrev")
         else:
-            msg = f"Invalid argument {short}"
+            msg = f"Invalid argument {style}"
             raise ValueError(msg)
         if unit is None:
-            msg = f"Invalid argument {short}"
+            msg = f"Invalid argument {style}"
             raise ValueError(msg)
 
         # make unit singular if needed
-        if short in [NORMAL, SHORT] and singular:
+        if style in [Style.NORMAL, Style.SHORT] and singular:
             unit = unit[:-1]
 
         output.append(f"{sign}{val} {unit}")

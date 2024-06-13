@@ -83,6 +83,7 @@ select = [
     # "FURB",  # refurb
 ]
 ignore = [
+    "ERA001", # commented out code
     "ANN101",  # missing self annotation, we only annotate self when we return it.
     "ANN102",  # missing cls annotation, we only annotate cls when we return it.
 

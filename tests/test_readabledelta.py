@@ -372,15 +372,9 @@ class TestTimedelta:
 
     def _td_keys(
         self,
-        # key_cases: list[tuple[tuple[TDUnit, ...], str]],
-        # key_cases: list[tuple[tuple[TDUnit, ...] | tuple[str, ...], str]],
-        # key_cases: list[tuple[tuple[TDUnit, ...] | tuple[T_tdkeys, ...], str]],
-        # key_cases: list[tuple[tuple[TDUnit | str, ...], str]],
-        # key_cases: list[tuple[tuple[TDUnit | T_tdkeys, ...], str]],
         key_cases: (
             list[tuple[tuple[TDUnit, ...], str]] | list[tuple[tuple[str, ...], str]]
         ),
-        # key_cases: list[tuple[Sequence[TDUnit] | Sequence[T_tdkeys], ...], str],
         delta: timedelta,
         showzero: bool = False,
     ) -> None:
@@ -486,11 +480,16 @@ class TestTimedelta:
         assert to_string(timedelta(0), keys=valid) == "0:00:00"
         assert to_string(timedelta(0)) == "0:00:00"
 
+    def test_invalid_style(self) -> None:
+        with pytest.raises(ValueError, match="Invalid argument foobar"):
+            to_string(timedelta(1), style="foobar")  # type: ignore[arg-type]
+
 
 class TestExtractUnits:
     def test_extract_units(self) -> None:
         assert extract_units(timedelta(hours=28)) == (TDUnit.DAYS, TDUnit.HOURS)
         assert extract_units(timedelta(minutes=90)) == (TDUnit.HOURS, TDUnit.MINUTES)
+        assert extract_units(timedelta(minutes=90), keys=(TDUnit.MINUTES,)) == (TDUnit.MINUTES,)
         assert extract_units(timedelta(minutes=60)) == (TDUnit.HOURS,)
 
 
@@ -700,3 +699,7 @@ class TestRelativedelta:
             "microseconds",
         )
         assert from_relativedelta(relativedelta(hours=0), keys=valid) == "now"
+
+    def test_invalid_style(self) -> None:
+        with pytest.raises(ValueError, match="Invalid argument foobar"):
+            from_relativedelta(relativedelta(days=1), style="foobar")  # type: ignore[arg-type]

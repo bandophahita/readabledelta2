@@ -303,7 +303,10 @@ def to_string(
         if val == 0 and showzero is False:
             continue
         singular = val == 1
-        tu = TIME_UNITS.__getitem__(k)
+        tu = TIME_UNITS.get(k)
+        if tu is None:  # pragma: no cover
+            msg = f"Invalid key {k}"
+            raise ValueError(msg)
 
         if style == Style.NORMAL:
             unit = tu.get("plural")
@@ -314,7 +317,7 @@ def to_string(
         else:
             msg = f"Invalid argument {style}"
             raise ValueError(msg)
-        if unit is None:
+        if unit is None:  # pragma: no cover
             msg = f"Invalid argument {style}"
             raise ValueError(msg)
 
@@ -403,7 +406,7 @@ def from_relativedelta(
             continue
         singular = val == 1
         tu = TIME_UNITS.get(k)
-        if tu is None:
+        if tu is None:  # pragma: no cover
             msg = f"Invalid key {k}"
             raise ValueError(msg)
 
@@ -416,7 +419,7 @@ def from_relativedelta(
         else:
             msg = f"Invalid argument {style}"
             raise ValueError(msg)
-        if unit is None:
+        if unit is None:  # pragma: no cover
             msg = f"Invalid argument {style}"
             raise ValueError(msg)
 

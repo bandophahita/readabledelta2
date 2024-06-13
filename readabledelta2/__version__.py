@@ -1,4 +1,3 @@
-
 import importlib.metadata
 
 metadata = importlib.metadata.metadata("readabledelta2")

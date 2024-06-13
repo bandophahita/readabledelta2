@@ -489,7 +489,9 @@ class TestExtractUnits:
     def test_extract_units(self) -> None:
         assert extract_units(timedelta(hours=28)) == (TDUnit.DAYS, TDUnit.HOURS)
         assert extract_units(timedelta(minutes=90)) == (TDUnit.HOURS, TDUnit.MINUTES)
-        assert extract_units(timedelta(minutes=90), keys=(TDUnit.MINUTES,)) == (TDUnit.MINUTES,)
+        assert extract_units(timedelta(minutes=90), keys=(TDUnit.MINUTES,)) == (
+            TDUnit.MINUTES,
+        )
         assert extract_units(timedelta(minutes=60)) == (TDUnit.HOURS,)
 
 

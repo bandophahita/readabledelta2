@@ -10,7 +10,7 @@ from __future__ import annotations
 import warnings
 from datetime import datetime, timedelta, timezone
 from enum import IntEnum, StrEnum
-from typing import Any, TypedDict, TypeVar
+from typing import TypedDict
 
 from dateutil.relativedelta import relativedelta
 
@@ -81,33 +81,6 @@ TIME_UNITS: dict[str, UnitTranslation] = {
 }
 # fmt: on
 # @formatter:on
-
-
-class ReadableDelta(timedelta):
-    """Human readable version of timedelta."""
-
-    def __new__(cls: type[T], *args: Any, **kwargs: Any) -> T:  # noqa: ANN401
-        """Creates a timedelta"""
-        years = kwargs.pop(YEARS, 0)
-        if DAYS in kwargs:
-            kwargs[DAYS] += 365 * years
-        elif years:
-            arg0 = args[0] if args else 0
-            args = (365 * years + arg0,) + args[1:]
-        return timedelta.__new__(cls, *args, **kwargs)
-
-    @classmethod
-    def from_timedelta(cls: type[T], dt: timedelta) -> T:
-        """Converts timedelta to readabledelta."""
-        return cls(days=dt.days, seconds=dt.seconds, microseconds=dt.microseconds)
-
-    def __unicode__(self) -> str:
-        return to_string(self)
-
-    __str__ = __unicode__
-
-
-T = TypeVar("T", bound=ReadableDelta)
 
 
 ################################################################################

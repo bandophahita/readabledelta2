@@ -5,17 +5,11 @@ from datetime import timedelta
 import pytest
 from dateutil.relativedelta import relativedelta
 
-from readabledelta2 import (
-    ABBREV,
-    NORMAL,
-    SHORT,
-    from_relativedelta,
-    to_string,
-)
+from readabledelta2 import ABBREV, NORMAL, SHORT, from_relativedelta, to_string
 from readabledelta2.readabledelta import (
     extract_units,
-    split_timedelta_units,
     split_relativedelta_units,
+    split_timedelta_units,
 )
 
 
@@ -364,7 +358,7 @@ class TestTimedelta:
 
     def test_to_string_using_relativedelta(self) -> None:
         with pytest.raises(TypeError):
-            to_string(relativedelta(hours=0), short=NORMAL)  # type: ignore # noqa
+            to_string(relativedelta(hours=0), short=NORMAL)  # type: ignore[arg-type]
 
     def _td_keys(
         self,

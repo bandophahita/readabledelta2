@@ -1,7 +1,8 @@
 """
-Taken and modified from https://github.com/wimglenn/readabledelta/blob/master
-/readabledelta.py
-Converted to 3x python
+Readabledelta.
+
+Taken and modified from
+https://github.com/wimglenn/readabledelta/blob/master/readabledelta.py
 """
 
 from __future__ import annotations
@@ -74,11 +75,10 @@ RELATIVEDELTA_ALLOWED_KEYS = (
 
 
 class ReadableDelta(timedelta):
-    """
-    Human readable version of timedelta
-    """
+    """Human readable version of timedelta."""
 
-    def __new__(cls: type[T], *args: Any, **kwargs: Any) -> T:
+    def __new__(cls: type[T], *args: Any, **kwargs: Any) -> T:  # noqa: ANN401
+        """Creates a timedelta"""
         years = kwargs.pop(YEARS, 0)
         if DAYS in kwargs:
             kwargs[DAYS] += 365 * years
@@ -89,6 +89,7 @@ class ReadableDelta(timedelta):
 
     @classmethod
     def from_timedelta(cls: type[T], dt: timedelta) -> T:
+        """Converts timedelta to readabledelta."""
         return cls(days=dt.days, seconds=dt.seconds, microseconds=dt.microseconds)
 
     def __unicode__(self) -> str:
@@ -206,7 +207,9 @@ def split_relativedelta_units(
     # it's impossible to filter out months because there is no way to
     # convert them to smaller units without the relative dates.
     if MONTHS not in keys and months:
-        warnings.warn("Cannot reduce months down to smaller units", Warning)
+        warnings.warn(
+            "Cannot reduce months down to smaller units", Warning, stacklevel=1
+        )
 
     data[MONTHS] = months
 
@@ -250,6 +253,7 @@ def split_relativedelta_units(
 def is_negative_relativedelta(
     delta: T_delta, dt: datetime = datetime(1970, 1, 1, tzinfo=UTC)
 ) -> bool:
+    """Determine if relative delta is negative"""
     return (dt + delta) < (dt + relativedelta())
 
 
@@ -257,12 +261,13 @@ def is_negative_relativedelta(
 def to_string(
     delta: timedelta,
     short: int = NORMAL,
-    include_sign: bool = True,
     keys: Sequence[str] | None = None,
+    *,
+    include_sign: bool = True,
     showzero: bool = False,
 ) -> str:
     """
-    Create Human readable timedelta string
+    Create Human readable timedelta string.
 
     :param timedelta | ReadableDelta delta:
     :param short: 1: uses short names, 2: uses abbreviation names
@@ -295,7 +300,8 @@ def to_string(
         singular = val == 1
         tu = TIME_UNITS.get(k)
         if tu is None:
-            raise ValueError(f"Invalid key {k}")
+            msg = f"Invalid key {k}"
+            raise ValueError(msg)
 
         if short == NORMAL:
             unit = tu.get("plural")
@@ -304,9 +310,11 @@ def to_string(
         elif short == ABBREV:
             unit = tu.get("abbrev")
         else:
-            raise ValueError(f"Invalid argument {short}")
+            msg = f"Invalid argument {short}"
+            raise ValueError(msg)
         if unit is None:
-            raise ValueError(f"Invalid argument {short}")
+            msg = f"Invalid argument {short}"
+            raise ValueError(msg)
 
         # make magnitude singular
         if short in [NORMAL, SHORT] and singular:
@@ -350,10 +358,24 @@ def extract_units(delta: timedelta, keys: Sequence[str] | None = None) -> list[s
 def from_relativedelta(
     rdelta: relativedelta,
     short: int = NORMAL,
-    include_sign: bool = True,
     keys: Sequence[str] | None = None,
+    *,
+    include_sign: bool = True,
     showzero: bool = False,
 ) -> str:
+    """
+    Create Human readable relativedelta string.
+
+    :param ReadableDelta rdelta:
+    :param short: 1: uses short names, 2: uses abbreviation names
+    :param include_sign: false will prevent sign from appearing
+            allows you to create negative deltas but still have a human sentence like
+            '2 hours ago' instead of '-2 hours ago'
+    :param keys: array of timeunits to be used for output
+    :param bool showzero: prints out the values even if they are zero
+    :return:
+    :rtype: str
+    """
     negative = is_negative_relativedelta(rdelta)
     sign = "-" if include_sign and negative else ""
     rdelta = abs(rdelta)
@@ -375,7 +397,8 @@ def from_relativedelta(
         singular = val == 1
         tu = TIME_UNITS.get(k)
         if tu is None:
-            raise ValueError(f"Invalid key {k}")
+            msg = f"Invalid key {k}"
+            raise ValueError(msg)
 
         if short == NORMAL:
             unit = tu.get("plural")
@@ -384,9 +407,11 @@ def from_relativedelta(
         elif short == ABBREV:
             unit = tu.get("abbrev")
         else:
-            raise ValueError(f"Invalid argument {short}")
+            msg = f"Invalid argument {short}"
+            raise ValueError(msg)
         if unit is None:
-            raise ValueError(f"Invalid argument {short}")
+            msg = f"Invalid argument {short}"
+            raise ValueError(msg)
 
         # make unit singular if needed
         if short in [NORMAL, SHORT] and singular:

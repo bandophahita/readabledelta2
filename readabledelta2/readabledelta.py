@@ -101,7 +101,9 @@ def split_timedelta_units(
     :return:
     """
     keys = tuple(set(keys))
-    assert set(keys).issubset(tuple(TDUnit)), f"keys can only be {tuple(TDUnit)}"
+    if not set(keys).issubset(tuple(TDUnit)):
+        msg = f"keys can only be the following: {tuple(TDUnit)}"
+        raise ValueError(msg)
 
     delta = abs(delta)
 
@@ -167,7 +169,9 @@ def split_relativedelta_units(
     :return:
     """
     keys = tuple(set(keys))
-    assert set(keys).issubset(tuple(RDUnit)), f"keys can only be {tuple(RDUnit)}"
+    if not set(keys).issubset(tuple(RDUnit)):
+        msg = f"keys can only be the following: {tuple(RDUnit)}"
+        raise ValueError(msg)
 
     delta = abs(delta)
 
@@ -272,7 +276,9 @@ def to_string(
         keys = tuple(TDUnit)
     else:
         keys = tuple(set(keys))
-        assert set(keys).issubset(tuple(TDUnit)), f"keys can only be {tuple(TDUnit)}"
+        if not set(keys).issubset(tuple(TDUnit)):
+            msg = f"keys can only be the following: {tuple(TDUnit)}"
+            raise ValueError(msg)
 
     data = split_timedelta_units(delta, keys)
 
@@ -332,7 +338,9 @@ def extract_units(
     :return:
     """
     keys = tuple(set(keys))
-    assert set(keys).issubset(tuple(TDUnit)), f"keys can only be {tuple(TDUnit)}"
+    if not set(keys).issubset(tuple(TDUnit)):
+        msg = f"keys can only be the following: {tuple(TDUnit)}"
+        raise ValueError(msg)
     data = split_timedelta_units(delta, keys)
     rkeys = []
     for key, val in data.items():
@@ -374,7 +382,9 @@ def from_relativedelta(
         keys = tuple(RDUnit)
     else:
         keys = tuple(set(keys))
-        assert set(keys).issubset(tuple(RDUnit)), f"keys can only be {tuple(RDUnit)}"
+        if not set(keys).issubset(tuple(RDUnit)):
+            msg = f"keys can only be the following: {tuple(RDUnit)}"
+            raise ValueError(msg)
 
     data = split_relativedelta_units(rdelta, keys)
 

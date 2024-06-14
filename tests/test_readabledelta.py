@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import timedelta
 
 import pytest
@@ -72,6 +73,11 @@ class TestSplitUnitsTimedelta:
             TDUnit.WEEKS: 53,
             TDUnit.MICROSECONDS: 3660000000,
         }
+
+    def test_invalid_keys(self) -> None:
+        msg = f"keys can only be the following: {tuple(TDUnit)}"
+        with pytest.raises(ValueError, match=re.escape(msg)):
+            split_timedelta_units(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
 
 
 class TestSplitUnitsRelativedelta:
@@ -186,6 +192,11 @@ class TestSplitUnitsRelativedelta:
             RDUnit.WEEKS: 53,
             RDUnit.MICROSECONDS: 3660000000,
         }
+
+    def test_invalid_keys(self) -> None:
+        msg = f"keys can only be the following: {tuple(RDUnit)}"
+        with pytest.raises(ValueError, match=re.escape(msg)):
+            split_relativedelta_units(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
 
 
 class TestTimedelta:
@@ -463,7 +474,8 @@ class TestTimedelta:
         self._td_keys(key_cases, delta, True)
 
     def test_invalid_keys(self) -> None:
-        with pytest.raises(AssertionError):
+        msg = f"keys can only be the following: {tuple(TDUnit)}"
+        with pytest.raises(ValueError, match=re.escape(msg)):
             to_string(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
 
     def test_valid_keys(self) -> None:
@@ -493,6 +505,11 @@ class TestExtractUnits:
             TDUnit.MINUTES,
         )
         assert extract_units(timedelta(minutes=60)) == (TDUnit.HOURS,)
+
+    def test_invalid_keys(self) -> None:
+        msg = f"keys can only be the following: {tuple(TDUnit)}"
+        with pytest.raises(ValueError, match=re.escape(msg)):
+            extract_units(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
 
 
 class TestRelativedelta:
@@ -687,7 +704,8 @@ class TestRelativedelta:
         self._rd_unsigned_negative(Style.ABBREV)
 
     def test_relativedelta_invalid_keys(self) -> None:
-        with pytest.raises(AssertionError):
+        msg = f"keys can only be the following: {tuple(RDUnit)}"
+        with pytest.raises(ValueError, match=re.escape(msg)):
             from_relativedelta(relativedelta(hours=0), keys=("bogus", "milliseconds"))
 
     def test_relativedelta_valid_keys(self) -> None:

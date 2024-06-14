@@ -9,8 +9,7 @@ from __future__ import annotations
 
 import warnings
 from datetime import datetime, timedelta, timezone
-from enum import Enum, IntEnum, StrEnum
-from typing import TypedDict
+from enum import Enum, StrEnum
 
 from dateutil.relativedelta import relativedelta
 
@@ -24,10 +23,10 @@ class ExtendedEnum(Enum):
         return tuple(c.value for c in cls)
 
 
-class Style(IntEnum, ExtendedEnum):
-    NORMAL = 0
-    SHORT = 1
-    ABBREV = 2
+class Style(StrEnum, ExtendedEnum):
+    NORMAL = "normal"
+    SHORT = "short"
+    ABBREV = "abbrev"
 
 
 YEARS = "years"
@@ -64,27 +63,20 @@ class RDUnit(StrEnum, ExtendedEnum):
     MICROSECONDS = MICROSECONDS
 
 
-class UnitTranslation(TypedDict):
-    plural: str
-    singular: str
-    abbrev: str
-    short: str
-
-
 T_delta = relativedelta | timedelta
 
 # @formatter:off
 # fmt: off
-TIME_UNITS: dict[str, UnitTranslation] = {
-    MICROSECONDS: {"plural": "microseconds", "singular": "microsecond", "abbrev": "µs", "short": "µsecs"},
-    MILLISECONDS: {"plural": "milliseconds", "singular": "millisecond", "abbrev": "ms", "short": "msecs"},
-    SECONDS     : {"plural": "seconds",      "singular": "second",      "abbrev": "s",  "short": "secs"},
-    MINUTES     : {"plural": "minutes",      "singular": "minute",      "abbrev": "m",  "short": "mins"},
-    HOURS       : {"plural": "hours",        "singular": "hour",        "abbrev": "h",  "short": "hrs"},
-    DAYS        : {"plural": "days",         "singular": "day",         "abbrev": "D",  "short": "days"},
-    WEEKS       : {"plural": "weeks",        "singular": "week",        "abbrev": "W",  "short": "wks"},
-    MONTHS      : {"plural": "months",       "singular": "month",       "abbrev": "M",  "short": "mnths"},
-    YEARS       : {"plural": "years",        "singular": "year",        "abbrev": "Y",  "short": "yrs"},
+TIME_UNITS: dict[str, dict[Style, str]] = {
+    MICROSECONDS: {Style.NORMAL: "microseconds", Style.SHORT: "µsecs", Style.ABBREV: "µs"},
+    MILLISECONDS: {Style.NORMAL: "milliseconds", Style.SHORT: "msecs", Style.ABBREV: "ms"},
+    SECONDS     : {Style.NORMAL: "seconds",      Style.SHORT: "secs",  Style.ABBREV: "s"},
+    MINUTES     : {Style.NORMAL: "minutes",      Style.SHORT: "mins",  Style.ABBREV: "m"},
+    HOURS       : {Style.NORMAL: "hours",        Style.SHORT: "hrs",   Style.ABBREV: "h"},
+    DAYS        : {Style.NORMAL: "days",         Style.SHORT: "days",  Style.ABBREV: "D"},
+    WEEKS       : {Style.NORMAL: "weeks",        Style.SHORT: "wks",   Style.ABBREV: "W"},
+    MONTHS      : {Style.NORMAL: "months",       Style.SHORT: "mnths", Style.ABBREV: "M"},
+    YEARS       : {Style.NORMAL: "years",        Style.SHORT: "yrs",   Style.ABBREV: "Y"},
 }
 # fmt: on
 # @formatter:on
@@ -257,7 +249,7 @@ def from_timedelta(
     Create Human readable timedelta string.
 
     :param timedelta delta:
-    :param style: 0: normal names, 1: short names, 2: abbreviations
+    :param style: normal, short, abbrev
     :param keys: tuple of timeunits to be used for output
     :param include_sign: false will prevent sign from appearing
             allows you to create negative deltas but still have a human sentence like
@@ -290,16 +282,8 @@ def from_timedelta(
             msg = f"Invalid key {k}"
             raise ValueError(msg)
 
-        if style == Style.NORMAL:
-            unit = tu.get("plural")
-        elif style == Style.SHORT:
-            unit = tu.get("short")
-        elif style == Style.ABBREV:
-            unit = tu.get("abbrev")
-        else:
-            msg = f"Invalid argument {style}"
-            raise ValueError(msg)
-        if unit is None:  # pragma: no cover
+        unit = tu.get(style)
+        if unit is None:
             msg = f"Invalid argument {style}"
             raise ValueError(msg)
 
@@ -389,16 +373,8 @@ def from_relativedelta(
             msg = f"Invalid key {k}"
             raise ValueError(msg)
 
-        if style == Style.NORMAL:
-            unit = tu.get("plural")
-        elif style == Style.SHORT:
-            unit = tu.get("short")
-        elif style == Style.ABBREV:
-            unit = tu.get("abbrev")
-        else:
-            msg = f"Invalid argument {style}"
-            raise ValueError(msg)
-        if unit is None:  # pragma: no cover
+        unit = tu.get(style)
+        if unit is None:
             msg = f"Invalid argument {style}"
             raise ValueError(msg)
 

@@ -16,6 +16,16 @@ from readabledelta2.readabledelta import (
 )
 
 
+def idx_exp(style: Style) -> int:
+    match style:
+        case Style.NORMAL:
+            return 0
+        case Style.SHORT:
+            return 1
+        case Style.ABBREV:
+            return 2
+
+
 class TestSplitUnitsTimedelta:
     def test_split_units(self) -> None:
         ans = {
@@ -336,26 +346,27 @@ class TestTimedelta:
     def _td_signed(self, style: Style) -> None:
         for expected, delta in self.cases:
             assert (
-                from_timedelta(delta, include_sign=True, style=style) == expected[style]
+                from_timedelta(delta, include_sign=True, style=style)
+                == expected[idx_exp(style)]
             )
 
         for expected, delta in self.cases:
             assert (
                 from_timedelta(-delta, include_sign=True, style=style)
-                == f"-{expected[style]}"
+                == f"-{expected[idx_exp(style)]}"
             )
 
     def _td_unsigned(self, style: Style) -> None:
         for expected, delta in self.cases:
             assert (
                 from_timedelta(delta, include_sign=False, style=style)
-                == expected[style]
+                == expected[idx_exp(style)]
             )
 
         for expected, delta in self.cases:
             assert (
                 from_timedelta(-delta, include_sign=False, style=style)
-                == f"{expected[style]}"
+                == f"{expected[idx_exp(style)]}"
             )
 
     def test_signed_normal(self) -> None:
@@ -649,28 +660,28 @@ class TestRelativedelta:
         for expected, delta in self.rd_cases:
             assert (
                 from_relativedelta(delta, include_sign=True, style=style)
-                == expected[style]
+                == expected[idx_exp(style)]
             )
 
     def _rd_signed_negative(self, style: Style) -> None:
         for expected, delta in self.rd_cases:
             assert (
                 from_relativedelta(-delta, include_sign=True, style=style)
-                == f"-{expected[style]}"
+                == f"-{expected[idx_exp(style)]}"
             )
 
     def _rd_unsigned(self, style: Style) -> None:
         for expected, delta in self.rd_cases:
             assert (
                 from_relativedelta(delta, include_sign=False, style=style)
-                == expected[style]
+                == expected[idx_exp(style)]
             )
 
     def _rd_unsigned_negative(self, style: Style) -> None:
         for expected, delta in self.rd_cases:
             assert (
                 from_relativedelta(-delta, include_sign=False, style=style)
-                == f"{expected[style]}"
+                == f"{expected[idx_exp(style)]}"
             )
 
     def test_signed_normal(self) -> None:

@@ -735,7 +735,7 @@ class TestRelativedelta:
             "seconds",
             "microseconds",
         )
-        assert from_relativedelta(relativedelta(hours=0), keys=valid) == "now"
+        assert from_relativedelta(relativedelta(hours=0), keys=valid) == "0:00:00"
 
     def test_invalid_style(self) -> None:
         with pytest.raises(ValueError, match="Invalid argument foobar"):

@@ -229,47 +229,24 @@ def split_relativedelta_units(
     return data
 
 
-def is_negative_relativedelta(
-    delta: T_delta, dt: datetime = datetime(1970, 1, 1, tzinfo=UTC)
-) -> bool:
-    """Determine if relative delta is negative"""
+def is_negative_relativedelta(delta: relativedelta) -> bool:
+    """Determine if relativedelta is negative"""
+    dt: datetime = datetime(1970, 1, 1, tzinfo=UTC)
     return (dt + delta) < (dt + relativedelta())
 
 
-################################################################################
-def from_timedelta(
-    delta: timedelta,
-    style: Style = Style.NORMAL,
-    keys: tuple[TDUnit | str, ...] | None = None,
-    *,
-    include_sign: bool = True,
-    showzero: bool = False,
+def is_negative_timedelta(delta: timedelta) -> bool:
+    """Determine if timedelta is negative"""
+    return delta < timedelta(0)
+
+
+def _process_output(
+    data: dict[RDUnit, int] | dict[TDUnit, int],
+    keys: tuple[RDUnit | TDUnit | str, ...],
+    showzero: bool,
+    style: Style,
+    sign: str,
 ) -> str:
-    """
-    Create Human readable timedelta string.
-
-    :param timedelta delta:
-    :param style: normal, short, abbrev
-    :param keys: tuple of timeunits to be used for output
-    :param include_sign: false will prevent sign from appearing
-            allows you to create negative deltas but still have a human sentence like
-            '2 hours ago' instead of '-2 hours ago'
-    :param bool showzero: prints out the values even if they are zero
-    """
-    negative = delta < timedelta(0)
-    sign = "-" if include_sign and negative else ""
-    delta = abs(delta)
-
-    if keys is None:
-        keys = tuple(TDUnit)
-    else:
-        keys = tuple(set(keys))
-        if not set(keys).issubset(tuple(TDUnit)):
-            msg = f"keys can only be the following: {tuple(TDUnit)}"
-            raise ValueError(msg)
-
-    data = split_timedelta_units(delta, keys)
-
     output = []
     for k, val in data.items():
         if k not in keys:
@@ -296,8 +273,8 @@ def from_timedelta(
         if val != 0:
             sign = ""
 
-    if not output:
-        result = str(delta)
+    if len(output) == 0:
+        result = "0:00:00"
     elif len(output) == 1:
         result = output[0]
     else:
@@ -305,6 +282,43 @@ def from_timedelta(
         result = f"{', '.join(left)} and {right[0]}"
 
     return result
+
+
+################################################################################
+def from_timedelta(
+    delta: timedelta,
+    style: Style = Style.NORMAL,
+    keys: tuple[TDUnit | str, ...] | None = None,
+    *,
+    include_sign: bool = True,
+    showzero: bool = False,
+) -> str:
+    """
+    Create Human readable timedelta string.
+
+    :param timedelta delta:
+    :param style: normal, short, abbrev
+    :param keys: tuple of timeunits to be used for output
+    :param include_sign: false will prevent sign from appearing
+            allows you to create negative deltas but still have a human sentence like
+            '2 hours ago' instead of '-2 hours ago'
+    :param bool showzero: prints out the values even if they are zero
+    """
+    negative = is_negative_timedelta(delta)
+    sign = "-" if include_sign and negative else ""
+    delta = abs(delta)
+
+    if keys is None:
+        keys = tuple(TDUnit)
+    else:
+        keys = tuple(set(keys))
+        if not set(keys).issubset(tuple(TDUnit)):
+            msg = f"keys can only be the following: {tuple(TDUnit)}"
+            raise ValueError(msg)
+
+    data = split_timedelta_units(delta, keys)
+
+    return _process_output(data, keys, showzero, style, sign)
 
 
 ################################################################################
@@ -361,38 +375,4 @@ def from_relativedelta(
 
     data = split_relativedelta_units(rdelta, keys)
 
-    output = []
-    for k, val in data.items():
-        if k not in keys:
-            continue
-        if val == 0 and showzero is False:
-            continue
-        singular = val == 1
-        tu = TIME_UNITS.get(k)
-        if tu is None:  # pragma: no cover
-            msg = f"Invalid key {k}"
-            raise ValueError(msg)
-
-        unit = tu.get(style)
-        if unit is None:
-            msg = f"Invalid argument {style}"
-            raise ValueError(msg)
-
-        # make unit singular if needed
-        if style in [Style.NORMAL, Style.SHORT] and singular:
-            unit = unit[:-1]
-
-        output.append(f"{sign}{val} {unit}")
-        # we only need to show the negative sign once.
-        if val != 0:
-            sign = ""
-
-    if not output:
-        result = "now"
-    elif len(output) == 1:
-        result = output[0]
-    else:
-        left, right = output[:-1], output[-1:]
-        result = f"{', '.join(left)} and {right[0]}"
-
-    return result
+    return _process_output(data, keys, showzero, style, sign)

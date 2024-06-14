@@ -343,7 +343,7 @@ def extract_units(
 
 ################################################################################
 def from_relativedelta(
-    rdelta: relativedelta,
+    delta: relativedelta,
     style: Style = Style.NORMAL,
     keys: tuple[RDUnit | str, ...] | None = None,
     *,
@@ -353,7 +353,7 @@ def from_relativedelta(
     """
     Create Human readable relativedelta string.
 
-    :param relativedelta rdelta:
+    :param relativedelta delta:
     :param style: 0: normal names, 1: short names, 2: abbreviations
     :param keys: tuple of timeunits to be used for output
     :param include_sign: false will prevent sign from appearing
@@ -361,11 +361,11 @@ def from_relativedelta(
             '2 hours ago' instead of '-2 hours ago'
     :param bool showzero: prints out the values even if they are zero
     """
-    negative = is_negative_relativedelta(rdelta)
+    negative = is_negative_relativedelta(delta)
     sign = "-" if include_sign and negative else ""
-    rdelta = abs(rdelta)
+    delta = abs(delta)
 
-    if keys is None:
+    if keys is None or len(keys) == 0:
         keys = tuple(RDUnit)
     else:
         keys = tuple(set(keys))
@@ -373,6 +373,10 @@ def from_relativedelta(
             msg = f"keys can only be the following: {tuple(RDUnit)}"
             raise ValueError(msg)
 
-    data = split_relativedelta_units(rdelta, keys)
+    data = split_relativedelta_units(delta, keys)
 
-    return _process_output(data, keys, showzero, style, sign)
+    if not delta and not showzero:
+        showzero = True
+        keys = (RDUnit.SECONDS,)
+
+    return _process_output(data, style, keys, showzero, sign)

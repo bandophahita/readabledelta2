@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import warnings
 from datetime import datetime, timedelta, timezone
-from enum import IntEnum, StrEnum
+from enum import Enum, IntEnum, StrEnum
 from typing import TypedDict
 
 from dateutil.relativedelta import relativedelta
@@ -17,7 +17,14 @@ from dateutil.relativedelta import relativedelta
 UTC = timezone.utc
 
 
-class Style(IntEnum):
+class ExtendedEnum(Enum):
+    @classmethod
+    def values(cls) -> tuple:  # pragma: no cover
+        """Return values of enum"""
+        return tuple(c.value for c in cls)
+
+
+class Style(IntEnum, ExtendedEnum):
     NORMAL = 0
     SHORT = 1
     ABBREV = 2
@@ -34,7 +41,7 @@ MILLISECONDS = "milliseconds"
 MICROSECONDS = "microseconds"
 
 
-class TDUnit(StrEnum):
+class TDUnit(StrEnum, ExtendedEnum):
     YEARS = YEARS
     WEEKS = WEEKS
     DAYS = DAYS
@@ -46,7 +53,7 @@ class TDUnit(StrEnum):
 
 
 # months are included here because relativedelta knows how to handle it.
-class RDUnit(StrEnum):
+class RDUnit(StrEnum, ExtendedEnum):
     YEARS = YEARS
     MONTHS = MONTHS
     WEEKS = WEEKS

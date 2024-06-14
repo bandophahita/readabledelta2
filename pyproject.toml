@@ -119,7 +119,7 @@ ignore = [
 extend-safe-fixes = [
     "EM101", "EM102",
     "TCH001", "TCH002", "TCH003", "TCH004",
-    "C419",
+    "C417", "C419",
     "D200", "D205", "D415",
     "PT003", "PT006", "PT018",
     "RET504",

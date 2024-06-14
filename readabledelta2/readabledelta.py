@@ -76,15 +76,15 @@ T_delta = relativedelta | timedelta
 # @formatter:off
 # fmt: off
 TIME_UNITS: dict[str, UnitTranslation] = {
-    MICROSECONDS: {"plural": "microseconds", "singular": "microsecond", "abbrev": "µs", "short": "µsecs"},  # noqa: E501
-    MILLISECONDS: {"plural": "milliseconds", "singular": "millisecond", "abbrev": "ms", "short": "msecs"},  # noqa: E501
-    SECONDS     : {"plural": "seconds",      "singular": "second",      "abbrev": "s",  "short": "secs"},  # noqa: E501
-    MINUTES     : {"plural": "minutes",      "singular": "minute",      "abbrev": "m",  "short": "mins"},  # noqa: E501
-    HOURS       : {"plural": "hours",        "singular": "hour",        "abbrev": "h",  "short": "hrs"},  # noqa: E501
-    DAYS        : {"plural": "days",         "singular": "day",         "abbrev": "D",  "short": "days"},  # noqa: E501
-    WEEKS       : {"plural": "weeks",        "singular": "week",        "abbrev": "W",  "short": "wks"},  # noqa: E501
-    MONTHS      : {"plural": "months",       "singular": "month",       "abbrev": "M",  "short": "mnths"},  # noqa: E501
-    YEARS       : {"plural": "years",        "singular": "year",        "abbrev": "Y",  "short": "yrs"},  # noqa: E501
+    MICROSECONDS: {"plural": "microseconds", "singular": "microsecond", "abbrev": "µs", "short": "µsecs"},
+    MILLISECONDS: {"plural": "milliseconds", "singular": "millisecond", "abbrev": "ms", "short": "msecs"},
+    SECONDS     : {"plural": "seconds",      "singular": "second",      "abbrev": "s",  "short": "secs"},
+    MINUTES     : {"plural": "minutes",      "singular": "minute",      "abbrev": "m",  "short": "mins"},
+    HOURS       : {"plural": "hours",        "singular": "hour",        "abbrev": "h",  "short": "hrs"},
+    DAYS        : {"plural": "days",         "singular": "day",         "abbrev": "D",  "short": "days"},
+    WEEKS       : {"plural": "weeks",        "singular": "week",        "abbrev": "W",  "short": "wks"},
+    MONTHS      : {"plural": "months",       "singular": "month",       "abbrev": "M",  "short": "mnths"},
+    YEARS       : {"plural": "years",        "singular": "year",        "abbrev": "Y",  "short": "yrs"},
 }
 # fmt: on
 # @formatter:on

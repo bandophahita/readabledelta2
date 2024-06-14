@@ -245,7 +245,7 @@ def is_negative_relativedelta(
 
 
 ################################################################################
-def to_string(
+def from_timedelta(
     delta: timedelta,
     style: Style = Style.NORMAL,
     keys: tuple[TDUnit | str, ...] | None = None,

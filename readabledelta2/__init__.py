@@ -5,11 +5,11 @@ Readabledelta2.
 :license: MIT, see LICENSE for more details.
 """
 
-from .readabledelta import RDUnit, Style, TDUnit, from_relativedelta, to_string
+from .readabledelta import RDUnit, Style, TDUnit, from_relativedelta, from_timedelta
 
 __all__ = (
     "from_relativedelta",
-    "to_string",
+    "from_timedelta",
     "Style",
     "TDUnit",
     "RDUnit",

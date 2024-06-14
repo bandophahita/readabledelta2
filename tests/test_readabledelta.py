@@ -6,7 +6,7 @@ from datetime import timedelta
 import pytest
 from dateutil.relativedelta import relativedelta
 
-from readabledelta2 import Style, from_relativedelta, to_string
+from readabledelta2 import Style, from_relativedelta, from_timedelta
 from readabledelta2.readabledelta import (
     RDUnit,
     TDUnit,
@@ -200,7 +200,7 @@ class TestSplitUnitsRelativedelta:
 
 
 class TestTimedelta:
-    """Test all things related to to_string and timedelta"""
+    """Test all things related to from_timedelta and timedelta"""
 
     # @formatter:off
     # fmt: off
@@ -335,21 +335,26 @@ class TestTimedelta:
 
     def _td_signed(self, style: Style) -> None:
         for expected, delta in self.cases:
-            assert to_string(delta, include_sign=True, style=style) == expected[style]
+            assert (
+                from_timedelta(delta, include_sign=True, style=style) == expected[style]
+            )
 
         for expected, delta in self.cases:
             assert (
-                to_string(-delta, include_sign=True, style=style)
+                from_timedelta(-delta, include_sign=True, style=style)
                 == f"-{expected[style]}"
             )
 
     def _td_unsigned(self, style: Style) -> None:
         for expected, delta in self.cases:
-            assert to_string(delta, include_sign=False, style=style) == expected[style]
+            assert (
+                from_timedelta(delta, include_sign=False, style=style)
+                == expected[style]
+            )
 
         for expected, delta in self.cases:
             assert (
-                to_string(-delta, include_sign=False, style=style)
+                from_timedelta(-delta, include_sign=False, style=style)
                 == f"{expected[style]}"
             )
 
@@ -372,14 +377,15 @@ class TestTimedelta:
         self._td_unsigned(Style.ABBREV)
 
     def test_show_zero(self) -> None:
-        assert to_string(timedelta(weeks=60, hours=1), showzero=True) == (
+        assert from_timedelta(timedelta(weeks=60, hours=1), showzero=True) == (
             "1 year, 7 weeks, 6 days, 1 hour, 0 minutes, "
             "0 seconds, 0 milliseconds and 0 microseconds"
         )
 
-    def test_to_string_using_relativedelta(self) -> None:
-        with pytest.raises(TypeError):
-            to_string(relativedelta(hours=0), style=Style.NORMAL)  # type: ignore[arg-type]
+    def test_from_timedelta_using_relativedelta(self) -> None:
+        msg = "'<' not supported between instances of 'relativedelta' and 'datetime.timedelta'"
+        with pytest.raises(TypeError, match=msg):
+            from_timedelta(relativedelta(hours=0), style=Style.NORMAL)  # type: ignore[arg-type]
 
     def _td_keys(
         self,
@@ -390,7 +396,7 @@ class TestTimedelta:
         showzero: bool = False,
     ) -> None:
         for keys, expected in key_cases:
-            assert to_string(delta, keys=keys, showzero=showzero) == expected
+            assert from_timedelta(delta, keys=keys, showzero=showzero) == expected
 
     def test_limited_keys(self) -> None:
         delta = timedelta(weeks=60, hours=1)
@@ -476,7 +482,7 @@ class TestTimedelta:
     def test_invalid_keys(self) -> None:
         msg = f"keys can only be the following: {tuple(TDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
-            to_string(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
+            from_timedelta(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
 
     def test_valid_keys(self) -> None:
         valid = (
@@ -489,12 +495,12 @@ class TestTimedelta:
             "milliseconds",
             "microseconds",
         )
-        assert to_string(timedelta(0), keys=valid) == "0:00:00"
-        assert to_string(timedelta(0)) == "0:00:00"
+        assert from_timedelta(timedelta(0), keys=valid) == "0:00:00"
+        assert from_timedelta(timedelta(0)) == "0:00:00"
 
     def test_invalid_style(self) -> None:
         with pytest.raises(ValueError, match="Invalid argument foobar"):
-            to_string(timedelta(1), style="foobar")  # type: ignore[arg-type]
+            from_timedelta(timedelta(1), style="foobar")  # type: ignore[arg-type]
 
 
 class TestExtractUnits:

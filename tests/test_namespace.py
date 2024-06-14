@@ -4,7 +4,7 @@ import readabledelta2
 def test_readabledelta2() -> None:
     expected = [
         "from_relativedelta",
-        "to_string",
+        "from_timedelta",
         "Style",
         "TDUnit",
         "RDUnit",

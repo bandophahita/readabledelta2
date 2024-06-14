@@ -98,7 +98,6 @@ def split_timedelta_units(
 
     :param timedelta delta:
     :param keys: array of time magnitudes to be used for output
-    :return:
     """
     keys = tuple(set(keys))
     if not set(keys).issubset(tuple(TDUnit)):
@@ -164,9 +163,8 @@ def split_relativedelta_units(
 ) -> dict[RDUnit, int]:
     """
 
-    :param delta:
+    :param relativedelta delta:
     :param keys: array of time magnitudes to be used for output
-    :return:
     """
     keys = tuple(set(keys))
     if not set(keys).issubset(tuple(RDUnit)):
@@ -258,15 +256,13 @@ def to_string(
     """
     Create Human readable timedelta string.
 
-    :param timedelta | ReadableDelta delta:
-    :param style: 1: uses short names, 2: uses abbreviation names
+    :param timedelta delta:
+    :param style: 0: normal names, 1: short names, 2: abbreviations
+    :param keys: tuple of timeunits to be used for output
     :param include_sign: false will prevent sign from appearing
             allows you to create negative deltas but still have a human sentence like
             '2 hours ago' instead of '-2 hours ago'
-    :param keys: array of timeunits to be used for output
     :param bool showzero: prints out the values even if they are zero
-    :return:
-    :rtype: str
     """
     negative = delta < timedelta(0)
     sign = "-" if include_sign and negative else ""
@@ -331,12 +327,7 @@ def to_string(
 def extract_units(
     delta: timedelta, keys: tuple[TDUnit, ...] = tuple(TDUnit)
 ) -> tuple[TDUnit, ...]:
-    """
-    Given a timedelta, determine all the time magnitudes within said delta.
-
-    :param timedelta delta:
-    :return:
-    """
+    """Given a timedelta, determine all the time magnitudes within said delta."""
     keys = tuple(set(keys))
     if not set(keys).issubset(tuple(TDUnit)):
         msg = f"keys can only be the following: {tuple(TDUnit)}"
@@ -364,15 +355,13 @@ def from_relativedelta(
     """
     Create Human readable relativedelta string.
 
-    :param ReadableDelta rdelta:
-    :param style: 1: uses short names, 2: uses abbreviation names
+    :param relativedelta rdelta:
+    :param style: 0: normal names, 1: short names, 2: abbreviations
+    :param keys: tuple of timeunits to be used for output
     :param include_sign: false will prevent sign from appearing
             allows you to create negative deltas but still have a human sentence like
             '2 hours ago' instead of '-2 hours ago'
-    :param keys: array of timeunits to be used for output
     :param bool showzero: prints out the values even if they are zero
-    :return:
-    :rtype: str
     """
     negative = is_negative_relativedelta(rdelta)
     sign = "-" if include_sign and negative else ""

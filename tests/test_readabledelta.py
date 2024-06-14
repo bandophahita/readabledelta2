@@ -350,6 +350,7 @@ class TestTimedelta:
                 == expected[idx_exp(style)]
             )
 
+    def _td_signed_negative(self, style: Style) -> None:
         for expected, delta in self.cases:
             assert (
                 from_timedelta(-delta, include_sign=True, style=style)
@@ -363,6 +364,7 @@ class TestTimedelta:
                 == expected[idx_exp(style)]
             )
 
+    def _td_unsigned_negative(self, style: Style) -> None:
         for expected, delta in self.cases:
             assert (
                 from_timedelta(-delta, include_sign=False, style=style)
@@ -372,20 +374,38 @@ class TestTimedelta:
     def test_signed_normal(self) -> None:
         self._td_signed(Style.NORMAL)
 
-    def test_unsigned_normal(self) -> None:
-        self._td_unsigned(Style.NORMAL)
+    def test_signed_negative_normal(self) -> None:
+        self._td_signed_negative(Style.NORMAL)
 
     def test_signed_short(self) -> None:
         self._td_signed(Style.SHORT)
 
-    def test_usigned_short(self) -> None:
-        self._td_unsigned(Style.SHORT)
+    def test_signed_negative_short(self) -> None:
+        self._td_signed_negative(Style.SHORT)
 
     def test_signed_abbrev(self) -> None:
         self._td_signed(Style.ABBREV)
 
+    def test_signed_negative_abbrev(self) -> None:
+        self._td_signed_negative(Style.ABBREV)
+
+    def test_unsigned_normal(self) -> None:
+        self._td_unsigned(Style.NORMAL)
+
+    def test_unsigned_negative_normal(self) -> None:
+        self._td_unsigned_negative(Style.NORMAL)
+
+    def test_usigned_short(self) -> None:
+        self._td_unsigned(Style.SHORT)
+
+    def test_usigned_negative_short(self) -> None:
+        self._td_unsigned_negative(Style.SHORT)
+
     def test_unsigned_abbrev(self) -> None:
         self._td_unsigned(Style.ABBREV)
+
+    def test_unsigned_negative_abbrev(self) -> None:
+        self._td_unsigned_negative(Style.ABBREV)
 
     def test_show_zero(self) -> None:
         assert from_timedelta(timedelta(weeks=60, hours=1), showzero=True) == (
@@ -405,9 +425,10 @@ class TestTimedelta:
         ),
         delta: timedelta,
         showzero: bool = False,
+        style: Style = Style.NORMAL,
     ) -> None:
         for keys, expected in key_cases:
-            assert from_timedelta(delta, keys=keys, showzero=showzero) == expected
+            assert from_timedelta(delta, style, keys, showzero=showzero) == expected
 
     def test_limited_keys(self) -> None:
         delta = timedelta(weeks=60, hours=1)
@@ -445,17 +466,50 @@ class TestTimedelta:
     def test_limited_keys3(self) -> None:
         """
         Doesn't matter what keys you send when the delta is 0,
-        you'll always get back the delta
+        you'll always get back '0 seconds'
         """
         delta = timedelta(0)
-        key_cases = [
-            (("hours",), "0:00:00"),
-            (("days", "hours"), "0:00:00"),
-            (("minutes",), "0:00:00"),
-            (("seconds",), "0:00:00"),
-            (("minutes", "seconds"), "0:00:00"),
+        cases_normal = [
+            (("hours",), "0 seconds"),
+            (("days", "hours"), "0 seconds"),
+            (("minutes",), "0 seconds"),
+            (("seconds",), "0 seconds"),
+            (("minutes", "seconds"), "0 seconds"),
         ]
-        self._td_keys(key_cases, delta, False)
+
+        self._td_keys(cases_normal, delta, False, Style.NORMAL)
+
+    def test_limited_keys4(self) -> None:
+        """
+        Doesn't matter what keys you send when the delta is 0,
+        you'll always get back '0 secs'
+        """
+        delta = timedelta(0)
+        cases_short = [
+            (("hours",), "0 secs"),
+            (("days", "hours"), "0 secs"),
+            (("minutes",), "0 secs"),
+            (("seconds",), "0 secs"),
+            (("minutes", "seconds"), "0 secs"),
+        ]
+
+        self._td_keys(cases_short, delta, False, Style.SHORT)
+
+    def test_limited_keys5(self) -> None:
+        """
+        Doesn't matter what keys you send when the delta is 0,
+        you'll always get back '0 s'
+        """
+        delta = timedelta(0)
+        cases_abbrev = [
+            (("hours",), "0 s"),
+            (("days", "hours"), "0 s"),
+            (("minutes",), "0 s"),
+            (("seconds",), "0 s"),
+            (("minutes", "seconds"), "0 s"),
+        ]
+
+        self._td_keys(cases_abbrev, delta, False, Style.ABBREV)
 
     def test_limited_keys_showzero(self) -> None:
         delta = timedelta(days=6, hours=23, minutes=59)
@@ -506,8 +560,15 @@ class TestTimedelta:
             "milliseconds",
             "microseconds",
         )
-        assert from_timedelta(timedelta(0), keys=valid) == "0:00:00"
-        assert from_timedelta(timedelta(0)) == "0:00:00"
+        assert from_timedelta(timedelta(0), keys=valid) == "0 seconds"
+        assert from_timedelta(timedelta(0)) == "0 seconds"
+
+    def test_no_keys(self) -> None:
+        delta = timedelta(weeks=60, hours=1)
+        key_cases = [
+            ((), "1 year, 7 weeks, 6 days and 1 hour"),
+        ]
+        self._td_keys(key_cases, delta)
 
     def test_invalid_style(self) -> None:
         with pytest.raises(ValueError, match="Invalid argument foobar"):
@@ -655,7 +716,6 @@ class TestRelativedelta:
     )
     # fmt: on
 
-    # not supported yet
     def _rd_signed(self, style: Style) -> None:
         for expected, delta in self.rd_cases:
             assert (
@@ -720,6 +780,143 @@ class TestRelativedelta:
     def test_unsigned_negative_abbrev(self) -> None:
         self._rd_unsigned_negative(Style.ABBREV)
 
+    def test_show_zero(self) -> None:
+        assert from_relativedelta(relativedelta(weeks=60, hours=1), showzero=True) == (
+            "0 years, 0 months, 60 weeks, 0 days, 1 hour, 0 minutes, "
+            "0 seconds and 0 microseconds"
+        )
+
+    def test_from_timedelta_using_relativedelta(self) -> None:
+        msg = "'datetime.timedelta' object has no attribute 'years'"
+        with pytest.raises(AttributeError, match=msg):
+            from_relativedelta(timedelta(hours=0), style=Style.NORMAL)  # type: ignore[arg-type]
+
+    def _rd_keys(
+        self,
+        key_cases: (
+            list[tuple[tuple[RDUnit, ...], str]] | list[tuple[tuple[str, ...], str]]
+        ),
+        delta: relativedelta,
+        showzero: bool = False,
+        style: Style = Style.NORMAL,
+    ) -> None:
+        for keys, expected in key_cases:
+            assert from_relativedelta(delta, style, keys, showzero=showzero) == expected
+
+    def test_limited_keys(self) -> None:
+        delta = relativedelta(weeks=60, hours=1)
+        key_cases = [
+            ((RDUnit.HOURS,), "10081 hours"),
+            ((RDUnit.DAYS, TDUnit.HOURS), "420 days and 1 hour"),
+            ((RDUnit.MINUTES,), "604860 minutes"),
+            ((RDUnit.SECONDS,), "36291600 seconds"),
+            ((RDUnit.MINUTES, TDUnit.SECONDS), "604860 minutes"),
+        ]
+        self._rd_keys(key_cases, delta)
+
+    def test_limited_keys2(self) -> None:
+        delta = relativedelta(days=6, hours=23, minutes=59, seconds=59)
+        # @formatter:off
+        # fmt: off
+        key_cases = [
+            ((RDUnit.DAYS, RDUnit.HOURS, RDUnit.MINUTES, RDUnit.SECONDS),
+             "6 days, 23 hours, 59 minutes and 59 seconds"),
+            ((RDUnit.HOURS, RDUnit.MINUTES, RDUnit.SECONDS),
+             "167 hours, 59 minutes and 59 seconds"),
+            ((RDUnit.HOURS,),
+             "167 hours"),
+            ((RDUnit.MINUTES, RDUnit.SECONDS),
+             "10079 minutes and 59 seconds"),
+            ((RDUnit.SECONDS,),
+             "604799 seconds"),
+            ((RDUnit.DAYS, RDUnit.SECONDS),
+             "6 days and 86399 seconds"),
+        ]
+        # fmt: on
+        # @formatter:on
+        self._rd_keys(key_cases, delta)
+
+    def test_limited_keys3(self) -> None:
+        """
+        Doesn't matter what keys you send when the delta is 0,
+        you'll always get back '0 seconds'
+        """
+        delta = relativedelta(days=0)
+        cases_normal = [
+            (("hours",), "0 seconds"),
+            (("days", "hours"), "0 seconds"),
+            (("minutes",), "0 seconds"),
+            (("seconds",), "0 seconds"),
+            (("minutes", "seconds"), "0 seconds"),
+        ]
+
+        self._rd_keys(cases_normal, delta, False, Style.NORMAL)
+
+    def test_limited_keys4(self) -> None:
+        """
+        Doesn't matter what keys you send when the delta is 0,
+        you'll always get back '0 secs'
+        """
+        delta = relativedelta(days=0)
+        cases_short = [
+            (("hours",), "0 secs"),
+            (("days", "hours"), "0 secs"),
+            (("minutes",), "0 secs"),
+            (("seconds",), "0 secs"),
+            (("minutes", "seconds"), "0 secs"),
+        ]
+
+        self._rd_keys(cases_short, delta, False, Style.SHORT)
+
+    def test_limited_keys5(self) -> None:
+        """
+        Doesn't matter what keys you send when the delta is 0,
+        you'll always get back '0 s'
+        """
+        delta = relativedelta(days=0)
+        cases_abbrev = [
+            (("hours",), "0 s"),
+            (("days", "hours"), "0 s"),
+            (("minutes",), "0 s"),
+            (("seconds",), "0 s"),
+            (("minutes", "seconds"), "0 s"),
+        ]
+
+        self._rd_keys(cases_abbrev, delta, False, Style.ABBREV)
+
+    def test_limited_keys_showzero(self) -> None:
+        delta = relativedelta(days=6, hours=23, minutes=59)
+        # @formatter:off
+        # fmt: off
+        key_cases = [
+            (("days", "hours", "minutes", "seconds"),
+             "6 days, 23 hours, 59 minutes and 0 seconds"),
+            (("hours", "minutes", "seconds", "microseconds"),
+             "167 hours, 59 minutes, 0 seconds and 0 microseconds"),
+            (("weeks", "hours"),
+             "0 weeks and 167 hours"),
+            (("minutes", "seconds"),
+             "10079 minutes and 0 seconds"),
+            (("seconds",),
+             "604740 seconds"),
+            (("days", "seconds"),
+             "6 days and 86340 seconds"),
+        ]
+        # fmt: on
+        # @formatter:on
+        self._rd_keys(key_cases, delta, True)
+
+    def test_limited_keys_showzero2(self) -> None:
+        delta = relativedelta(hours=0)
+        key_cases = [
+            (("hours",), "0 hours"),
+            (("days", "hours"), "0 days and 0 hours"),
+            (("minutes",), "0 minutes"),
+            (("seconds",), "0 seconds"),
+            (("minutes", "seconds"), "0 minutes and 0 seconds"),
+        ]
+        self._rd_keys(key_cases, delta, True)
+
     def test_relativedelta_invalid_keys(self) -> None:
         msg = f"keys can only be the following: {tuple(RDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
@@ -735,7 +932,16 @@ class TestRelativedelta:
             "seconds",
             "microseconds",
         )
-        assert from_relativedelta(relativedelta(hours=0), keys=valid) == "0:00:00"
+        
+        assert from_relativedelta(relativedelta(hours=0), keys=valid) == "0 seconds"
+        assert from_relativedelta(relativedelta(hours=0)) == "0 seconds"
+
+    def test_no_keys(self) -> None:
+        delta = relativedelta(weeks=60, hours=1)
+        key_cases = [
+            ((), "60 weeks and 1 hour"),
+        ]
+        self._rd_keys(key_cases, delta)
 
     def test_invalid_style(self) -> None:
         with pytest.raises(ValueError, match="Invalid argument foobar"):

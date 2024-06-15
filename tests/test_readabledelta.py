@@ -24,6 +24,7 @@ from readabledelta2.readabledelta import (
     find_smallest_unit,
     split_relativedelta_units,
     split_timedelta_units,
+    sort_units,
 )
 
 
@@ -38,7 +39,112 @@ def idx_exp(style: Style) -> int:
 
 
 class TestSplitUnitsTimedelta:
-    def test_split_units(self) -> None:
+    ans = {
+        TDUnit.YEARS: 0,
+        TDUnit.WEEKS: 0,
+        TDUnit.DAYS: 0,
+        TDUnit.HOURS: 0,
+        TDUnit.MINUTES: 0,
+        TDUnit.SECONDS: 0,
+        TDUnit.MICROSECONDS: 0,
+        TDUnit.MILLISECONDS: 0,
+    }
+    delta = timedelta(weeks=53, hours=1, minutes=1)
+    def test_1(self) -> None:
+        delta = timedelta(weeks=53, hours=1, minutes=1)
+        assert split_timedelta_units(delta) == {
+            **self.ans,
+            TDUnit.YEARS: 1,
+            TDUnit.DAYS: 6,
+            TDUnit.HOURS: 1,
+            TDUnit.MINUTES: 1,
+        }
+
+    def test_2(self) -> None:
+        assert split_timedelta_units(self.delta, (TDUnit.WEEKS, TDUnit.DAYS)) == {
+            **self.ans,
+            TDUnit.WEEKS: 53,
+            TDUnit.HOURS: 1,
+            TDUnit.MINUTES: 1,
+        }
+
+    def test_3(self) -> None:
+        assert split_timedelta_units(self.delta, ("days", "hours")) == {
+            **self.ans,
+            TDUnit.DAYS: 371,
+            TDUnit.HOURS: 1,
+            TDUnit.MINUTES: 1,
+        }
+
+    def test_4(self) -> None:
+        assert split_timedelta_units(self.delta, (TDUnit.MINUTES,)) == {
+            **self.ans,
+            TDUnit.MINUTES: 534301,
+        }
+
+    def test_5(self) -> None:
+        assert split_timedelta_units(self.delta, (TDUnit.SECONDS,)) == {
+            **self.ans,
+            TDUnit.SECONDS: 32058060,
+        }
+
+    def test_6(self) -> None:
+        assert split_timedelta_units(self.delta, (TDUnit.DAYS, TDUnit.MINUTES)) == {
+            **self.ans,
+            TDUnit.DAYS: 371,
+            TDUnit.MINUTES: 61,
+        }
+
+    def test_7(self) -> None:
+        assert split_timedelta_units(self.delta, (TDUnit.DAYS, TDUnit.SECONDS)) == {
+            **self.ans,
+            TDUnit.DAYS: 371,
+            TDUnit.SECONDS: 3660,
+        }
+
+    def test_8(self) -> None:
+        assert split_timedelta_units(self.delta, (TDUnit.DAYS, TDUnit.MILLISECONDS)) == {
+            **self.ans,
+            TDUnit.DAYS: 371,
+            TDUnit.MILLISECONDS: 3660000,
+        }
+
+    def test_9(self) -> None:
+        assert split_timedelta_units(self.delta, (TDUnit.WEEKS, TDUnit.MICROSECONDS)) == {
+            **self.ans,
+            TDUnit.WEEKS: 53,
+            TDUnit.MICROSECONDS: 3660000000,
+        }
+
+    def test_nonsense_case(self) -> None:
+        ans = {
+            TDUnit.YEARS: 0,
+            TDUnit.WEEKS: 0,
+            TDUnit.DAYS: 0,
+            TDUnit.HOURS: 0,
+            TDUnit.MINUTES: 0,
+            TDUnit.SECONDS: 1,
+            TDUnit.MICROSECONDS: 0,
+            TDUnit.MILLISECONDS: 0,
+        }
+        delta = timedelta(seconds=1)
+        assert split_timedelta_units(delta, (TDUnit.YEARS,)) == ans
+
+    def test_nonsense_case2(self) -> None:
+        ans = {
+            TDUnit.YEARS: 0,
+            TDUnit.WEEKS: 0,
+            TDUnit.DAYS: 0,
+            TDUnit.HOURS: 0,
+            TDUnit.MINUTES: 1,
+            TDUnit.SECONDS: 0,
+            TDUnit.MICROSECONDS: 0,
+            TDUnit.MILLISECONDS: 0,
+        }
+        delta = timedelta(minutes=1)
+        assert split_timedelta_units(delta, (TDUnit.DAYS,)) == ans
+
+    def test_nonsense_cas3(self) -> None:
         ans = {
             TDUnit.YEARS: 0,
             TDUnit.WEEKS: 0,
@@ -49,60 +155,14 @@ class TestSplitUnitsTimedelta:
             TDUnit.MICROSECONDS: 0,
             TDUnit.MILLISECONDS: 0,
         }
-        delta = timedelta(weeks=53, hours=1, minutes=1)
-        assert split_timedelta_units(delta) == {
+        delta = timedelta(microseconds=1)
+        assert split_timedelta_units(delta, (TDUnit.WEEKS,)) == {
             **ans,
-            TDUnit.YEARS: 1,
-            TDUnit.DAYS: 6,
-            TDUnit.HOURS: 1,
-            TDUnit.MINUTES: 1,
-        }
-        assert split_timedelta_units(delta, (TDUnit.WEEKS, TDUnit.DAYS)) == {
-            **ans,
-            TDUnit.WEEKS: 53,
-        }
-        assert split_timedelta_units(delta, ("days", "hours")) == {
-            **ans,
-            TDUnit.DAYS: 371,
-            TDUnit.HOURS: 1,
-        }
-        assert split_timedelta_units(delta, (TDUnit.MINUTES,)) == {
-            **ans,
-            TDUnit.MINUTES: 534301,
-        }
-        assert split_timedelta_units(delta, (TDUnit.SECONDS,)) == {
-            **ans,
-            TDUnit.SECONDS: 32058060,
-        }
-        assert split_timedelta_units(delta, (TDUnit.DAYS, TDUnit.MINUTES)) == {
-            **ans,
-            TDUnit.DAYS: 371,
-            TDUnit.MINUTES: 61,
-        }
-        assert split_timedelta_units(delta, (TDUnit.DAYS, TDUnit.SECONDS)) == {
-            **ans,
-            TDUnit.DAYS: 371,
-            TDUnit.SECONDS: 3660,
-        }
-        assert split_timedelta_units(delta, (TDUnit.DAYS, TDUnit.MILLISECONDS)) == {
-            **ans,
-            TDUnit.DAYS: 371,
-            TDUnit.MILLISECONDS: 3660000,
-        }
-        assert split_timedelta_units(delta, (TDUnit.WEEKS, TDUnit.MICROSECONDS)) == {
-            **ans,
-            TDUnit.WEEKS: 53,
-            TDUnit.MICROSECONDS: 3660000000,
+            TDUnit.MICROSECONDS: 1,
         }
 
-        delta = timedelta(seconds=1)
-        assert split_timedelta_units(delta, (TDUnit.DAYS,)) == {
-            **ans,
-            # TDUnit.SECONDS: 0,
-        }
-
-    def test_invalid_keys(self) -> None:
-        msg = f"keys can only be the following: {tuple(TDUnit)}"
+    def test_invalid_units(self) -> None:
+        msg = f"Unknown units"
         with pytest.raises(ValueError, match=re.escape(msg)):
             split_timedelta_units(timedelta(0), units=["bogus"])  # type: ignore[arg-type]
 
@@ -220,8 +280,8 @@ class TestSplitUnitsRelativedelta:
             RDUnit.MICROSECONDS: 3660000000,
         }
 
-    def test_invalid_keys(self) -> None:
-        msg = f"keys can only be the following: {tuple(RDUnit)}"
+    def test_invalid_units(self) -> None:
+        msg = f"units can only be the following: {tuple(RDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
             split_relativedelta_units(timedelta(0), units=["bogus"])  # type: ignore[arg-type]
 
@@ -435,34 +495,35 @@ class TestTimedelta:
         with pytest.raises(TypeError, match=msg):
             from_timedelta(relativedelta(hours=0), style=Style.NORMAL)  # type: ignore[arg-type]
 
-    def _td_keys(
+    def _td_units(
         self,
-        key_cases: (
+        cases: (
             list[tuple[tuple[TDUnit, ...], str]] | list[tuple[tuple[str, ...], str]]
         ),
         delta: timedelta,
         showzero: bool = False,
         style: Style = Style.NORMAL,
     ) -> None:
-        for keys, expected in key_cases:
-            assert from_timedelta(delta, style, keys, showzero=showzero) == expected
+        for units, expected in cases:
+            assert from_timedelta(delta, style, units, showzero=showzero) == expected
 
-    def test_limited_keys(self) -> None:
+
+    def test_limited_units(self) -> None:
         delta = timedelta(weeks=60, hours=1)
-        key_cases = [
+        cases = [
             ((TDUnit.HOURS,), "10081 hours"),
             ((TDUnit.DAYS, TDUnit.HOURS), "420 days and 1 hour"),
             ((TDUnit.MINUTES,), "604860 minutes"),
             ((TDUnit.SECONDS,), "36291600 seconds"),
             ((TDUnit.MINUTES, TDUnit.SECONDS), "604860 minutes"),
         ]
-        self._td_keys(key_cases, delta)
+        self._td_units(cases, delta)
 
-    def test_limited_keys2(self) -> None:
+    def test_limited_units2(self) -> None:
         delta = timedelta(days=6, hours=23, minutes=59, seconds=59)
         # @formatter:off
         # fmt: off
-        key_cases = [
+        cases = [
             ((TDUnit.DAYS, TDUnit.HOURS, TDUnit.MINUTES, TDUnit.SECONDS),
              "6 days, 23 hours, 59 minutes and 59 seconds"),
             ((TDUnit.HOURS, TDUnit.MINUTES, TDUnit.SECONDS),
@@ -478,15 +539,15 @@ class TestTimedelta:
         ]
         # fmt: on
         # @formatter:on
-        self._td_keys(key_cases, delta)
+        self._td_units(cases, delta)
 
-    def test_limited_keys3(self) -> None:
+    def test_limited_units3(self) -> None:
         """
-        Doesn't matter what keys you send when the delta is 0,
+        Doesn't matter what units you request when the delta is 0,
         you'll always get back '0 seconds'
         """
         delta = timedelta(0)
-        cases_normal = [
+        cases = [
             (("hours",), "0 seconds"),
             (("days", "hours"), "0 seconds"),
             (("minutes",), "0 seconds"),
@@ -494,15 +555,15 @@ class TestTimedelta:
             (("minutes", "seconds"), "0 seconds"),
         ]
 
-        self._td_keys(cases_normal, delta, False, Style.NORMAL)
+        self._td_units(cases, delta, False, Style.NORMAL)
 
-    def test_limited_keys4(self) -> None:
+    def test_limited_units4(self) -> None:
         """
-        Doesn't matter what keys you send when the delta is 0,
+        Doesn't matter what units you request when the delta is 0,
         you'll always get back '0 secs'
         """
         delta = timedelta(0)
-        cases_short = [
+        cases = [
             (("hours",), "0 secs"),
             (("days", "hours"), "0 secs"),
             (("minutes",), "0 secs"),
@@ -510,15 +571,15 @@ class TestTimedelta:
             (("minutes", "seconds"), "0 secs"),
         ]
 
-        self._td_keys(cases_short, delta, False, Style.SHORT)
+        self._td_units(cases, delta, False, Style.SHORT)
 
-    def test_limited_keys5(self) -> None:
+    def test_limited_units5(self) -> None:
         """
-        Doesn't matter what keys you send when the delta is 0,
+        Doesn't matter what units you request when the delta is 0,
         you'll always get back '0 s'
         """
         delta = timedelta(0)
-        cases_abbrev = [
+        cases = [
             (("hours",), "0 s"),
             (("days", "hours"), "0 s"),
             (("minutes",), "0 s"),
@@ -526,13 +587,13 @@ class TestTimedelta:
             (("minutes", "seconds"), "0 s"),
         ]
 
-        self._td_keys(cases_abbrev, delta, False, Style.ABBREV)
+        self._td_units(cases, delta, False, Style.ABBREV)
 
-    def test_limited_keys_showzero(self) -> None:
+    def test_limited_units_showzero(self) -> None:
         delta = timedelta(days=6, hours=23, minutes=59)
         # @formatter:off
         # fmt: off
-        key_cases = [
+        cases = [
             (("days", "hours", "minutes", "seconds"),
              "6 days, 23 hours, 59 minutes and 0 seconds"),
             (("hours", "minutes", "seconds", "milliseconds"),
@@ -548,25 +609,25 @@ class TestTimedelta:
         ]
         # fmt: on
         # @formatter:on
-        self._td_keys(key_cases, delta, True)
+        self._td_units(cases, delta, True)
 
-    def test_limited_keys_showzero2(self) -> None:
+    def test_limited_units_showzero2(self) -> None:
         delta = timedelta(0)
-        key_cases = [
+        cases = [
             (("hours",), "0 hours"),
             (("days", "hours"), "0 days and 0 hours"),
             (("minutes",), "0 minutes"),
             (("seconds",), "0 seconds"),
             (("minutes", "seconds"), "0 minutes and 0 seconds"),
         ]
-        self._td_keys(key_cases, delta, True)
+        self._td_units(cases, delta, True)
 
-    def test_invalid_keys(self) -> None:
-        msg = f"keys can only be the following: {tuple(TDUnit)}"
+    def test_invalid_units(self) -> None:
+        msg = f"units can only be the following: {tuple(TDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
             from_timedelta(timedelta(0), units=["bogus"])  # type: ignore[arg-type]
 
-    def test_valid_keys(self) -> None:
+    def test_valid_units(self) -> None:
         valid = (
             "years",
             "weeks",
@@ -580,12 +641,12 @@ class TestTimedelta:
         assert from_timedelta(timedelta(0), units=valid) == "0 seconds"
         assert from_timedelta(timedelta(0)) == "0 seconds"
 
-    def test_no_keys(self) -> None:
+    def test_no_units(self) -> None:
         delta = timedelta(weeks=60, hours=1)
-        key_cases = [
+        cases = [
             ((), "1 year, 7 weeks, 6 days and 1 hour"),
         ]
-        self._td_keys(key_cases, delta)  # type: ignore[arg-type]
+        self._td_units(cases, delta)  # type: ignore[arg-type]
 
     def test_invalid_style(self) -> None:
         with pytest.raises(ValueError, match="Invalid argument foobar"):
@@ -604,8 +665,8 @@ class TestExtractUnits:
         )
         assert extract_units(timedelta(minutes=60)) == (TDUnit.HOURS,)
 
-    def test_invalid_keys(self) -> None:
-        msg = f"keys can only be the following: {tuple(TDUnit)}"
+    def test_invalid_units(self) -> None:
+        msg = f"units can only be the following: {tuple(TDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
             extract_units(timedelta(0), units=["bogus"])  # type: ignore[arg-type]
 
@@ -811,34 +872,34 @@ class TestRelativedelta:
         with pytest.raises(AttributeError, match=msg):
             from_relativedelta(timedelta(hours=0), style=Style.NORMAL)  # type: ignore[arg-type]
 
-    def _rd_keys(
+    def _rd_units(
         self,
-        key_cases: (
+        cases: (
             list[tuple[tuple[RDUnit, ...], str]] | list[tuple[tuple[str, ...], str]]
         ),
         delta: relativedelta,
         showzero: bool = False,
         style: Style = Style.NORMAL,
     ) -> None:
-        for keys, expected in key_cases:
-            assert from_relativedelta(delta, style, keys, showzero=showzero) == expected
+        for units, expected in cases:
+            assert from_relativedelta(delta, style, units, showzero=showzero) == expected
 
-    def test_limited_keys(self) -> None:
+    def test_limited_units(self) -> None:
         delta = relativedelta(weeks=60, hours=1)
-        key_cases = [
+        cases = [
             ((RDUnit.HOURS,), "10081 hours"),
             ((RDUnit.DAYS, RDUnit.HOURS), "420 days and 1 hour"),
             ((RDUnit.MINUTES,), "604860 minutes"),
             ((RDUnit.SECONDS,), "36291600 seconds"),
             ((RDUnit.MINUTES, RDUnit.SECONDS), "604860 minutes"),
         ]
-        self._rd_keys(key_cases, delta)
+        self._rd_units(cases, delta)
 
-    def test_limited_keys2(self) -> None:
+    def test_limited_units2(self) -> None:
         delta = relativedelta(days=6, hours=23, minutes=59, seconds=59)
         # @formatter:off
         # fmt: off
-        key_cases = [
+        cases = [
             ((RDUnit.DAYS, RDUnit.HOURS, RDUnit.MINUTES, RDUnit.SECONDS),
              "6 days, 23 hours, 59 minutes and 59 seconds"),
             ((RDUnit.HOURS, RDUnit.MINUTES, RDUnit.SECONDS),
@@ -854,15 +915,15 @@ class TestRelativedelta:
         ]
         # fmt: on
         # @formatter:on
-        self._rd_keys(key_cases, delta)
+        self._rd_units(cases, delta)
 
-    def test_limited_keys3(self) -> None:
+    def test_limited_units3(self) -> None:
         """
-        Doesn't matter what keys you send when the delta is 0,
+        Doesn't matter what units you request when the delta is 0,
         you'll always get back '0 seconds'
         """
         delta = relativedelta(days=0)
-        cases_normal = [
+        cases = [
             (("hours",), "0 seconds"),
             (("days", "hours"), "0 seconds"),
             (("minutes",), "0 seconds"),
@@ -870,15 +931,15 @@ class TestRelativedelta:
             (("minutes", "seconds"), "0 seconds"),
         ]
 
-        self._rd_keys(cases_normal, delta, False, Style.NORMAL)
+        self._rd_units(cases, delta, False, Style.NORMAL)
 
-    def test_limited_keys4(self) -> None:
+    def test_limited_units4(self) -> None:
         """
-        Doesn't matter what keys you send when the delta is 0,
+        Doesn't matter what units you request when the delta is 0,
         you'll always get back '0 secs'
         """
         delta = relativedelta(days=0)
-        cases_short = [
+        cases = [
             (("hours",), "0 secs"),
             (("days", "hours"), "0 secs"),
             (("minutes",), "0 secs"),
@@ -886,15 +947,15 @@ class TestRelativedelta:
             (("minutes", "seconds"), "0 secs"),
         ]
 
-        self._rd_keys(cases_short, delta, False, Style.SHORT)
+        self._rd_units(cases, delta, False, Style.SHORT)
 
-    def test_limited_keys5(self) -> None:
+    def test_limited_units5(self) -> None:
         """
-        Doesn't matter what keys you send when the delta is 0,
+        Doesn't matter what units you request when the delta is 0,
         you'll always get back '0 s'
         """
         delta = relativedelta(days=0)
-        cases_abbrev = [
+        cases = [
             (("hours",), "0 s"),
             (("days", "hours"), "0 s"),
             (("minutes",), "0 s"),
@@ -902,13 +963,13 @@ class TestRelativedelta:
             (("minutes", "seconds"), "0 s"),
         ]
 
-        self._rd_keys(cases_abbrev, delta, False, Style.ABBREV)
+        self._rd_units(cases, delta, False, Style.ABBREV)
 
-    def test_limited_keys_showzero(self) -> None:
+    def test_limited_units_showzero(self) -> None:
         delta = relativedelta(days=6, hours=23, minutes=59)
         # @formatter:off
         # fmt: off
-        key_cases = [
+        cases = [
             (("days", "hours", "minutes", "seconds"),
              "6 days, 23 hours, 59 minutes and 0 seconds"),
             (("hours", "minutes", "seconds", "microseconds"),
@@ -924,25 +985,25 @@ class TestRelativedelta:
         ]
         # fmt: on
         # @formatter:on
-        self._rd_keys(key_cases, delta, True)
+        self._rd_units(cases, delta, True)
 
-    def test_limited_keys_showzero2(self) -> None:
+    def test_limited_units_showzero2(self) -> None:
         delta = relativedelta(hours=0)
-        key_cases = [
+        cases = [
             (("hours",), "0 hours"),
             (("days", "hours"), "0 days and 0 hours"),
             (("minutes",), "0 minutes"),
             (("seconds",), "0 seconds"),
             (("minutes", "seconds"), "0 minutes and 0 seconds"),
         ]
-        self._rd_keys(key_cases, delta, True)
+        self._rd_units(cases, delta, True)
 
-    def test_relativedelta_invalid_keys(self) -> None:
-        msg = f"keys can only be the following: {tuple(RDUnit)}"
+    def test_relativedelta_invalid_units(self) -> None:
+        msg = f"units can only be the following: {tuple(RDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
             from_relativedelta(relativedelta(hours=0), units=("bogus", "milliseconds"))
 
-    def test_relativedelta_valid_keys(self) -> None:
+    def test_relativedelta_valid_units(self) -> None:
         valid = (
             "years",
             "months",
@@ -956,12 +1017,12 @@ class TestRelativedelta:
         assert from_relativedelta(relativedelta(hours=0), units=valid) == "0 seconds"
         assert from_relativedelta(relativedelta(hours=0)) == "0 seconds"
 
-    def test_no_keys(self) -> None:
+    def test_no_units(self) -> None:
         delta = relativedelta(weeks=60, hours=1)
-        key_cases = [
+        cases = [
             ((), "60 weeks and 1 hour"),
         ]
-        self._rd_keys(key_cases, delta)  # type: ignore[arg-type]
+        self._rd_units(cases, delta)  # type: ignore[arg-type]
 
     def test_invalid_style(self) -> None:
         with pytest.raises(ValueError, match="Invalid argument foobar"):
@@ -1025,3 +1086,83 @@ def test_smallest_unit_invalid() -> None:
     assert find_smallest_unit((FAKEUnit.YEARS, FAKEUnit.WEEKS)) is FAKEUnit.WEEKS
     with pytest.raises(ValueError, match="Unknown units"):
         find_smallest_unit((FAKEUnit.YEARS, FAKEUnit.WEEKS, FAKEUnit.FOO))
+
+
+def check(actual, expected):
+    assert actual == expected
+    for i, val in enumerate(actual):
+        assert val is expected[i]
+
+
+def test_sort_units() -> None:
+    expected = (
+        YEARS,
+        MONTHS,
+        WEEKS,
+        DAYS,
+        HOURS,
+        MINUTES,
+        SECONDS,
+        MILLISECONDS,
+        MICROSECONDS,
+    )
+    rt = sort_units(
+        (
+            MICROSECONDS,
+            DAYS,
+            HOURS,
+            MINUTES,
+            WEEKS,
+            YEARS,
+            SECONDS,
+            MILLISECONDS,
+            MONTHS,
+        )
+    )
+    check(rt, expected)
+
+
+def test_sort_units_tdunit() -> None:
+    expected = tuple(TDUnit)
+    rt = sort_units(
+        (
+            TDUnit.MINUTES,
+            TDUnit.DAYS,
+            TDUnit.YEARS,
+            TDUnit.WEEKS,
+            TDUnit.SECONDS,
+            TDUnit.MICROSECONDS,
+            TDUnit.HOURS,
+            TDUnit.MILLISECONDS,
+        )
+    )
+    check(rt, expected)
+
+
+def test_sort_units_rdunit() -> None:
+    expected = tuple(RDUnit)
+    rt = sort_units(
+        (
+            RDUnit.DAYS,
+            RDUnit.WEEKS,
+            RDUnit.MINUTES,
+            RDUnit.YEARS,
+            RDUnit.MICROSECONDS,
+            RDUnit.HOURS,
+            RDUnit.MONTHS,
+            RDUnit.SECONDS,
+        )
+    )
+    check(rt, expected)
+
+def test_sort_units_invalid() -> None:
+    with pytest.raises(ValueError, match="Unknown units"):
+        sort_units(("foo", "years"))
+    
+    class FAKEUnit(StrEnum):
+        YEARS = "years"
+        WEEKS = "weeks"
+        FOO = "foo"
+
+    with pytest.raises(ValueError, match="Unknown units"):
+        sort_units((FAKEUnit.YEARS, FAKEUnit.WEEKS, FAKEUnit.FOO))

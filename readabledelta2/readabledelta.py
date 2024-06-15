@@ -217,7 +217,7 @@ def split_relativedelta_units(
     """
     units = tuple(set(units))
     if not set(units).issubset(tuple(RDUnit)):
-        msg = f"keys can only be the following: {tuple(RDUnit)}"
+        msg = f"units can only be the following: {tuple(RDUnit)}"
         raise ValueError(msg)
 
     delta = abs(delta)
@@ -370,7 +370,7 @@ def from_timedelta(
     else:
         units = tuple(set(units))
         if not set(units).issubset(tuple(TDUnit)):
-            msg = f"keys can only be the following: {tuple(TDUnit)}"
+            msg = f"units can only be the following: {tuple(TDUnit)}"
             raise ValueError(msg)
 
     data = split_timedelta_units(delta, units)
@@ -393,7 +393,7 @@ def extract_units(
     """Given a timedelta, determine all the time magnitudes within said delta."""
     units = tuple(set(units))
     if not set(units).issubset(tuple(TDUnit)):
-        msg = f"keys can only be the following: {tuple(TDUnit)}"
+        msg = f"units can only be the following: {tuple(TDUnit)}"
         raise ValueError(msg)
     data = split_timedelta_units(delta, units)
     runits = []
@@ -435,7 +435,7 @@ def from_relativedelta(
     else:
         units = tuple(set(units))
         if not set(units).issubset(tuple(RDUnit)):
-            msg = f"keys can only be the following: {tuple(RDUnit)}"
+            msg = f"units can only be the following: {tuple(RDUnit)}"
             raise ValueError(msg)
 
     data = split_relativedelta_units(delta, units)

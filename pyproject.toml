@@ -118,6 +118,7 @@ ignore = [
 ]
 
 extend-safe-fixes = [
+    "SIM102",
     "EM101", "EM102",
     "TCH001", "TCH002", "TCH003", "TCH004",
     "C417", "C419",

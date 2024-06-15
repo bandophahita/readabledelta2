@@ -7,7 +7,6 @@ https://github.com/wimglenn/readabledelta/blob/master/readabledelta.py
 
 from __future__ import annotations
 
-import warnings
 from datetime import datetime, timedelta, timezone
 from enum import Enum, StrEnum
 from typing import overload
@@ -98,8 +97,8 @@ def find_smallest_unit(
         for unit in units:
             if unit == utype:
                 return unit
-        msg = f"Unknown unit {utype}"
-        raise ValueError(msg)
+
+        raise RuntimeError  # pragma: nocover
 
     if not set(units).issubset(
         (
@@ -139,6 +138,61 @@ def find_smallest_unit(
     raise RuntimeWarning  # pragma: nocover
 
 
+@overload
+def sort_units(units: tuple[RDUnit, ...]) -> tuple[RDUnit, ...]: ...
+@overload
+def sort_units(units: tuple[TDUnit, ...]) -> tuple[TDUnit, ...]: ...
+@overload
+def sort_units(units: tuple[str, ...]) -> tuple[str, ...]: ...
+def sort_units(
+    units: tuple[RDUnit | TDUnit | str, ...]
+) -> tuple[RDUnit | TDUnit | str, ...]:
+    """Return tuple of units sorted from largest to smallest time unit"""
+    units = tuple(set(units))
+    if not set(units).issubset(
+        (
+            YEARS,
+            MONTHS,
+            WEEKS,
+            DAYS,
+            HOURS,
+            MINUTES,
+            SECONDS,
+            MILLISECONDS,
+            MICROSECONDS,
+        )
+    ):
+        msg = "Unknown units"
+        raise ValueError(msg)
+
+    new_units = []
+
+    def append(utype: str) -> None:
+        for unit in units:
+            if unit == utype:
+                new_units.append(unit)
+
+    if YEARS in units:
+        append(YEARS)
+    if MONTHS in units:
+        append(MONTHS)
+    if WEEKS in units:
+        append(WEEKS)
+    if DAYS in units:
+        append(DAYS)
+    if HOURS in units:
+        append(HOURS)
+    if MINUTES in units:
+        append(MINUTES)
+    if SECONDS in units:
+        append(SECONDS)
+    if MILLISECONDS in units:
+        append(MILLISECONDS)
+    if MICROSECONDS in units:
+        append(MICROSECONDS)
+    return tuple(new_units)
+
+
 ################################################################################
 def split_timedelta_units(
     delta: timedelta, units: tuple[TDUnit | str, ...] = tuple(TDUnit)
@@ -148,9 +202,9 @@ def split_timedelta_units(
     :param timedelta delta:
     :param units: array of time magnitudes to be used for output
     """
-    units = tuple(set(units))
+    units = sort_units(units)
     if not set(units).issubset(tuple(TDUnit)):
-        msg = f"keys can only be the following: {tuple(TDUnit)}"
+        msg = f"units can only be the following: {tuple(TDUnit)}"
         raise ValueError(msg)
 
     delta = abs(delta)
@@ -161,45 +215,87 @@ def split_timedelta_units(
     seconds = delta.seconds
     microseconds = delta.microseconds
 
-    if TDUnit.YEARS in units:
+    units_list = list(units)
+
+    def have_leftovers() -> bool:
+        return bool(days or seconds or microseconds)
+
+    if TDUnit.YEARS in units_list:
         data[TDUnit.YEARS], days = divmod(days, 365)
+        units_list.pop(0)
     else:
         data[TDUnit.YEARS] = 0
 
-    if TDUnit.WEEKS in units:
+    if not units_list and have_leftovers():
+        weeks, _ = divmod(days, 7)
+        if weeks:
+            units_list.append(TDUnit.WEEKS)
+
+    if TDUnit.WEEKS in units_list:
         data[TDUnit.WEEKS], days = divmod(days, 7)
+        units_list.pop(0)
     else:
         data[TDUnit.WEEKS] = 0
 
-    if TDUnit.DAYS in units:
+    if not units_list and have_leftovers() and days:
+        units_list.append(TDUnit.DAYS)
+
+    if TDUnit.DAYS in units_list:
         data[TDUnit.DAYS] = days
+        units_list.pop(0)
     else:
         data[TDUnit.DAYS] = 0
         seconds += days * 86400  # 24 * 60 * 60
 
-    if TDUnit.HOURS in units:
+    if not units_list and have_leftovers():
+        hours, _ = divmod(seconds, 60 * 60)
+        if hours:
+            units_list.append(TDUnit.HOURS)
+
+    if TDUnit.HOURS in units_list:
         data[TDUnit.HOURS], seconds = divmod(seconds, 60 * 60)
+        units_list.pop(0)
     else:
         data[TDUnit.HOURS] = 0
 
-    if TDUnit.MINUTES in units:
+    if not units_list and have_leftovers():
+        minutes, _ = divmod(seconds, 60)
+        if minutes:
+            units_list.append(TDUnit.MINUTES)
+
+    if TDUnit.MINUTES in units_list:
         data[TDUnit.MINUTES], seconds = divmod(seconds, 60)
+        units_list.pop(0)
     else:
         data[TDUnit.MINUTES] = 0
 
-    if TDUnit.SECONDS in units:
+    if not units_list and have_leftovers() and seconds:
+        units_list.append(TDUnit.SECONDS)
+
+    if TDUnit.SECONDS in units_list:
         data[TDUnit.SECONDS] = seconds
+        units_list.pop(0)
     else:
         data[TDUnit.SECONDS] = 0
         microseconds += seconds * 1000000  # 1000 * 1000
 
-    if TDUnit.MILLISECONDS in units:
+    if not units_list and have_leftovers():
+        milliseconds, _ = divmod(microseconds, 1000)
+        if milliseconds:
+            units_list.append(TDUnit.MILLISECONDS)
+
+    if TDUnit.MILLISECONDS in units_list:
         data[TDUnit.MILLISECONDS], microseconds = divmod(microseconds, 1000)
+        units_list.pop(0)
     else:
         data[TDUnit.MILLISECONDS] = 0
 
-    if TDUnit.MICROSECONDS in units:
+    if not units_list and have_leftovers() and microseconds:
+        units_list.append(TDUnit.MICROSECONDS)
+
+    if TDUnit.MICROSECONDS in units_list:
         data[TDUnit.MICROSECONDS] = microseconds
+        units_list.pop(0)
     else:
         data[TDUnit.MICROSECONDS] = 0
 
@@ -215,71 +311,112 @@ def split_relativedelta_units(
     :param relativedelta delta:
     :param units: array of time magnitudes to be used for output
     """
-    units = tuple(set(units))
+    units = sort_units(units)
     if not set(units).issubset(tuple(RDUnit)):
         msg = f"units can only be the following: {tuple(RDUnit)}"
         raise ValueError(msg)
 
     delta = abs(delta)
 
-    # timedeltas are normalised to just days, seconds, microseconds in cpython
     data = {}
     years = delta.years
     months = delta.months
+    weeks = delta.weeks
     days = delta.days
     hours = delta.hours
     minutes = delta.minutes
     seconds = delta.seconds
     microseconds = delta.microseconds
 
+    units_list = list(units)
+
+    def have_leftovers() -> bool:
+        return bool(weeks or days or hours or minutes or seconds or microseconds)
+
     # years are relative due to leapyear.... so unless they are in the delta..
     # we won't calculate them
-    if RDUnit.YEARS in units:
+    if RDUnit.YEARS in units_list:
         data[RDUnit.YEARS] = years
+        units_list.pop(0)
     else:
         data[RDUnit.YEARS] = 0
         months += years * 12
 
     # it's impossible to filter out months because there is no way to
     # convert them to smaller units without the relative dates.
-    if RDUnit.MONTHS not in units and months:
-        warnings.warn(
-            "Cannot reduce months down to smaller units", Warning, stacklevel=1
-        )
+    if RDUnit.MONTHS not in units_list and months:
+        units_list.append(RDUnit.MONTHS)
+        units_list = list(sort_units(tuple(units_list)))
 
-    data[RDUnit.MONTHS] = months
+    if RDUnit.MONTHS in units_list:
+        data[RDUnit.MONTHS] = months
+        months = 0
+        units_list.pop(0)
+    else:
+        data[RDUnit.MONTHS] = 0
 
-    if RDUnit.WEEKS in units:
+    if not units_list and have_leftovers():
+        weeks, _ = divmod(days, 7)
+        if weeks:
+            units_list.append(RDUnit.WEEKS)
+
+    if RDUnit.WEEKS in units_list:
         data[RDUnit.WEEKS], days = divmod(days, 7)
+        weeks = 0
+        units_list.pop(0)
     else:
         data[RDUnit.WEEKS] = 0
 
-    if RDUnit.DAYS in units:
+    if not units_list and have_leftovers() and days:
+        units_list.append(RDUnit.DAYS)
+
+    if RDUnit.DAYS in units_list:
         data[RDUnit.DAYS] = days
+        days = 0
+        units_list.pop(0)
     else:
         data[RDUnit.DAYS] = 0
         hours += days * 24
 
-    if RDUnit.HOURS in units:
+    if not units_list and have_leftovers() and hours:
+        units_list.append(RDUnit.HOURS)
+
+    if RDUnit.HOURS in units_list:
         data[RDUnit.HOURS] = hours
+        hours = 0
+        units_list.pop(0)
     else:
         data[RDUnit.HOURS] = 0
         minutes += hours * 60
 
-    if RDUnit.MINUTES in units:
+    if not units_list and have_leftovers() and minutes:
+        units_list.append(RDUnit.MINUTES)
+
+    if RDUnit.MINUTES in units_list:
         data[RDUnit.MINUTES] = minutes
+        minutes = 0
+        units_list.pop(0)
     else:
         data[RDUnit.MINUTES] = 0
         seconds += minutes * 60
 
-    if RDUnit.SECONDS in units:
+    if not units_list and have_leftovers() and seconds:
+        units_list.append(RDUnit.SECONDS)
+
+    if RDUnit.SECONDS in units_list:
         data[RDUnit.SECONDS] = seconds
+        seconds = 0
+        units_list.pop(0)
     else:
         data[RDUnit.SECONDS] = 0
         microseconds += seconds * 1000000  # 1000 * 1000
 
-    if RDUnit.MICROSECONDS in units:
+    if not units_list and have_leftovers() and microseconds:
+        units_list.append(RDUnit.MICROSECONDS)
+
+    if RDUnit.MICROSECONDS in units_list:
         data[RDUnit.MICROSECONDS] = microseconds
+        units_list.pop(0)
     else:
         data[RDUnit.MICROSECONDS] = 0
 
@@ -306,7 +443,7 @@ def _process_output(
 ) -> str:
     output = []
     for k, val in data.items():
-        if k not in units:
+        if not val and k not in units:
             continue
         if val == 0 and showzero is False:
             continue
@@ -330,9 +467,9 @@ def _process_output(
         if val != 0:
             sign = ""
 
-    if len(output) == 0:
-        result = "NaN"
-    elif len(output) == 1:
+    if len(output) == 0:  # pragma: nocover
+        raise RuntimeError
+    if len(output) == 1:
         result = output[0]
     else:
         left, right = output[:-1], output[-1:]
@@ -375,35 +512,11 @@ def from_timedelta(
 
     data = split_timedelta_units(delta, units)
 
-    if not data:
-        msg = "yep"
-        raise RuntimeWarning(msg)
-
     if not delta and not showzero:
         showzero = True
         units = (TDUnit.SECONDS,)
 
     return _process_output(data, style, units, showzero, sign)
-
-
-################################################################################
-def extract_units(
-    delta: timedelta, units: tuple[TDUnit, ...] = tuple(TDUnit)
-) -> tuple[TDUnit, ...]:
-    """Given a timedelta, determine all the time magnitudes within said delta."""
-    units = tuple(set(units))
-    if not set(units).issubset(tuple(TDUnit)):
-        msg = f"units can only be the following: {tuple(TDUnit)}"
-        raise ValueError(msg)
-    data = split_timedelta_units(delta, units)
-    runits = []
-    for key, val in data.items():
-        if key not in units:
-            continue
-
-        if val:
-            runits.append(key)
-    return tuple(runits)
 
 
 ################################################################################
@@ -445,3 +558,23 @@ def from_relativedelta(
         units = (RDUnit.SECONDS,)
 
     return _process_output(data, style, units, showzero, sign)
+
+
+################################################################################
+def extract_units(
+    delta: timedelta, units: tuple[TDUnit, ...] = tuple(TDUnit)
+) -> tuple[TDUnit, ...]:
+    """Given a timedelta, determine all the time magnitudes within said delta."""
+    units = tuple(set(units))
+    if not set(units).issubset(tuple(TDUnit)):
+        msg = f"units can only be the following: {tuple(TDUnit)}"
+        raise ValueError(msg)
+    data = split_timedelta_units(delta, units)
+    runits = []
+    for key, val in data.items():
+        if key not in units:
+            continue
+
+        if val:
+            runits.append(key)
+    return tuple(runits)

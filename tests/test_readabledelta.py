@@ -2,15 +2,26 @@ from __future__ import annotations
 
 import re
 from datetime import timedelta
+from enum import StrEnum
 
 import pytest
 from dateutil.relativedelta import relativedelta
 
 from readabledelta2 import Style, from_relativedelta, from_timedelta
 from readabledelta2.readabledelta import (
+    DAYS,
+    HOURS,
+    MICROSECONDS,
+    MILLISECONDS,
+    MINUTES,
+    MONTHS,
+    SECONDS,
+    WEEKS,
+    YEARS,
     RDUnit,
     TDUnit,
     extract_units,
+    find_smallest_unit,
     split_relativedelta_units,
     split_timedelta_units,
 )
@@ -84,10 +95,16 @@ class TestSplitUnitsTimedelta:
             TDUnit.MICROSECONDS: 3660000000,
         }
 
+        delta = timedelta(seconds=1)
+        assert split_timedelta_units(delta, (TDUnit.DAYS,)) == {
+            **ans,
+            # TDUnit.SECONDS: 0,
+        }
+
     def test_invalid_keys(self) -> None:
         msg = f"keys can only be the following: {tuple(TDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
-            split_timedelta_units(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
+            split_timedelta_units(timedelta(0), units=["bogus"])  # type: ignore[arg-type]
 
 
 class TestSplitUnitsRelativedelta:
@@ -206,7 +223,7 @@ class TestSplitUnitsRelativedelta:
     def test_invalid_keys(self) -> None:
         msg = f"keys can only be the following: {tuple(RDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
-            split_relativedelta_units(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
+            split_relativedelta_units(timedelta(0), units=["bogus"])  # type: ignore[arg-type]
 
 
 class TestTimedelta:
@@ -547,7 +564,7 @@ class TestTimedelta:
     def test_invalid_keys(self) -> None:
         msg = f"keys can only be the following: {tuple(TDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
-            from_timedelta(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
+            from_timedelta(timedelta(0), units=["bogus"])  # type: ignore[arg-type]
 
     def test_valid_keys(self) -> None:
         valid = (
@@ -560,7 +577,7 @@ class TestTimedelta:
             "milliseconds",
             "microseconds",
         )
-        assert from_timedelta(timedelta(0), keys=valid) == "0 seconds"
+        assert from_timedelta(timedelta(0), units=valid) == "0 seconds"
         assert from_timedelta(timedelta(0)) == "0 seconds"
 
     def test_no_keys(self) -> None:
@@ -568,18 +585,21 @@ class TestTimedelta:
         key_cases = [
             ((), "1 year, 7 weeks, 6 days and 1 hour"),
         ]
-        self._td_keys(key_cases, delta)
+        self._td_keys(key_cases, delta)  # type: ignore[arg-type]
 
     def test_invalid_style(self) -> None:
         with pytest.raises(ValueError, match="Invalid argument foobar"):
             from_timedelta(timedelta(1), style="foobar")  # type: ignore[arg-type]
+
+    def test_no_output(self) -> None:
+        assert from_timedelta(timedelta(seconds=1), units=(TDUnit.HOURS,)) == "NaN"
 
 
 class TestExtractUnits:
     def test_extract_units(self) -> None:
         assert extract_units(timedelta(hours=28)) == (TDUnit.DAYS, TDUnit.HOURS)
         assert extract_units(timedelta(minutes=90)) == (TDUnit.HOURS, TDUnit.MINUTES)
-        assert extract_units(timedelta(minutes=90), keys=(TDUnit.MINUTES,)) == (
+        assert extract_units(timedelta(minutes=90), units=(TDUnit.MINUTES,)) == (
             TDUnit.MINUTES,
         )
         assert extract_units(timedelta(minutes=60)) == (TDUnit.HOURS,)
@@ -587,7 +607,7 @@ class TestExtractUnits:
     def test_invalid_keys(self) -> None:
         msg = f"keys can only be the following: {tuple(TDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
-            extract_units(timedelta(0), keys=["bogus"])  # type: ignore[arg-type]
+            extract_units(timedelta(0), units=["bogus"])  # type: ignore[arg-type]
 
 
 class TestRelativedelta:
@@ -807,10 +827,10 @@ class TestRelativedelta:
         delta = relativedelta(weeks=60, hours=1)
         key_cases = [
             ((RDUnit.HOURS,), "10081 hours"),
-            ((RDUnit.DAYS, TDUnit.HOURS), "420 days and 1 hour"),
+            ((RDUnit.DAYS, RDUnit.HOURS), "420 days and 1 hour"),
             ((RDUnit.MINUTES,), "604860 minutes"),
             ((RDUnit.SECONDS,), "36291600 seconds"),
-            ((RDUnit.MINUTES, TDUnit.SECONDS), "604860 minutes"),
+            ((RDUnit.MINUTES, RDUnit.SECONDS), "604860 minutes"),
         ]
         self._rd_keys(key_cases, delta)
 
@@ -920,7 +940,7 @@ class TestRelativedelta:
     def test_relativedelta_invalid_keys(self) -> None:
         msg = f"keys can only be the following: {tuple(RDUnit)}"
         with pytest.raises(ValueError, match=re.escape(msg)):
-            from_relativedelta(relativedelta(hours=0), keys=("bogus", "milliseconds"))
+            from_relativedelta(relativedelta(hours=0), units=("bogus", "milliseconds"))
 
     def test_relativedelta_valid_keys(self) -> None:
         valid = (
@@ -932,8 +952,8 @@ class TestRelativedelta:
             "seconds",
             "microseconds",
         )
-        
-        assert from_relativedelta(relativedelta(hours=0), keys=valid) == "0 seconds"
+
+        assert from_relativedelta(relativedelta(hours=0), units=valid) == "0 seconds"
         assert from_relativedelta(relativedelta(hours=0)) == "0 seconds"
 
     def test_no_keys(self) -> None:
@@ -941,7 +961,7 @@ class TestRelativedelta:
         key_cases = [
             ((), "60 weeks and 1 hour"),
         ]
-        self._rd_keys(key_cases, delta)
+        self._rd_keys(key_cases, delta)  # type: ignore[arg-type]
 
     def test_invalid_style(self) -> None:
         with pytest.raises(ValueError, match="Invalid argument foobar"):

@@ -1,8 +1,7 @@
 Readable Timedelta (mark2)
 ==========================
-
-[![Build Status](../../actions/workflows/tests.yml/badge.svg)](../../actions/workflows/tests.yml)
-[![Build Status](../../actions/workflows/lint.yml/badge.svg)](../../actions/workflows/lint.yml)
+[![Tests Status](https://github.com/bandophahita/readabledelta2/actions/workflows/tests.yml/badge.svg)](https://github.com/bandophahita/readabledelta2/actions/workflows/tests.yml)
+[![Lint Status](https://github.com/bandophahita/readabledelta2/actions/workflows/lint.yml/badge.svg)](https://github.com/bandophahita/readabledelta2/actions/workflows/lint.yml)
 
 [![Supported Versions](https://img.shields.io/pypi/pyversions/readabledelta2.svg)](https://pypi.org/project/readabledelta2)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)

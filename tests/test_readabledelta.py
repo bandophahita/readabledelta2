@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import timedelta
-from enum import StrEnum
+from enum import Enum
 from typing import ClassVar
 
 import pytest
@@ -1171,7 +1171,7 @@ def test_smallest_unit_invalid() -> None:
     with pytest.raises(ValueError, match="Unknown units"):
         find_smallest_unit(("years", "seconds", "days", "wibblies"))
 
-    class FAKEUnit(StrEnum):
+    class FAKEUnit(str, Enum):
         YEARS = "years"
         WEEKS = "weeks"
         FOO = "foo"
@@ -1256,7 +1256,7 @@ def test_sort_units_invalid() -> None:
     with pytest.raises(ValueError, match="Unknown units"):
         sort_units(("foo", "years"))
 
-    class FAKEUnit(StrEnum):
+    class FAKEUnit(str, Enum):
         YEARS = "years"
         WEEKS = "weeks"
         FOO = "foo"

@@ -10,6 +10,7 @@ from __future__ import annotations
 import warnings
 from datetime import datetime, timedelta, timezone
 from enum import Enum, StrEnum
+from typing import overload
 
 from dateutil.relativedelta import relativedelta
 
@@ -80,6 +81,62 @@ TIME_UNITS: dict[str, dict[Style, str]] = {
 }
 # fmt: on
 # @formatter:on
+
+
+@overload
+def find_smallest_unit(units: tuple[RDUnit, ...]) -> RDUnit: ...
+@overload
+def find_smallest_unit(units: tuple[TDUnit, ...]) -> TDUnit: ...
+@overload
+def find_smallest_unit(units: tuple[str, ...]) -> str: ...
+def find_smallest_unit(
+    units: tuple[RDUnit | TDUnit | str, ...]
+) -> str | RDUnit | TDUnit:
+    """Finds the smallest unit in the tuple"""
+
+    def rtn(utype: str) -> RDUnit | TDUnit | str:
+        for unit in units:
+            if unit == utype:
+                return unit
+        msg = f"Unknown unit {utype}"
+        raise ValueError(msg)
+
+    if not set(units).issubset(
+        (
+            YEARS,
+            MONTHS,
+            WEEKS,
+            DAYS,
+            HOURS,
+            MINUTES,
+            SECONDS,
+            MILLISECONDS,
+            MICROSECONDS,
+        )
+    ):
+        msg = "Unknown units"
+        raise ValueError(msg)
+
+    if MICROSECONDS in units:
+        return rtn(MICROSECONDS)
+    if MILLISECONDS in units:
+        return rtn(MILLISECONDS)
+    if SECONDS in units:
+        return rtn(SECONDS)
+    if MINUTES in units:
+        return rtn(MINUTES)
+    if HOURS in units:
+        return rtn(HOURS)
+    if DAYS in units:
+        return rtn(DAYS)
+    if WEEKS in units:
+        return rtn(WEEKS)
+    if MONTHS in units:
+        return rtn(MONTHS)
+    if YEARS in units:
+        return rtn(YEARS)
+
+    raise RuntimeWarning  # pragma: nocover
 
 
 ################################################################################

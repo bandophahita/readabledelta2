@@ -966,3 +966,62 @@ class TestRelativedelta:
     def test_invalid_style(self) -> None:
         with pytest.raises(ValueError, match="Invalid argument foobar"):
             from_relativedelta(relativedelta(days=1), style="foobar")  # type: ignore[arg-type]
+
+    def test_no_output(self) -> None:
+        assert (
+            from_relativedelta(relativedelta(seconds=1), units=(RDUnit.HOURS,)) == "NaN"
+        )
+
+
+def test_smallest_unit() -> None:
+    assert find_smallest_unit((YEARS,)) is YEARS
+    assert find_smallest_unit((YEARS, MONTHS)) is MONTHS
+    assert find_smallest_unit((MONTHS, WEEKS)) is WEEKS
+    assert find_smallest_unit((WEEKS, DAYS)) is DAYS
+    assert find_smallest_unit((DAYS, HOURS)) is HOURS
+    assert find_smallest_unit((HOURS, MINUTES)) is MINUTES
+    assert find_smallest_unit((MINUTES, SECONDS)) is SECONDS
+    assert find_smallest_unit((SECONDS, MILLISECONDS)) is MILLISECONDS
+    assert find_smallest_unit((MILLISECONDS, MICROSECONDS)) is MICROSECONDS
+
+
+def test_smallest_unit_tdunit() -> None:
+    assert (
+        find_smallest_unit((TDUnit.YEARS, TDUnit.SECONDS, TDUnit.DAYS))
+        is TDUnit.SECONDS
+    )
+    assert find_smallest_unit((TDUnit.YEARS, TDUnit.DAYS)) is TDUnit.DAYS
+    assert (
+        find_smallest_unit((TDUnit.YEARS, TDUnit.MINUTES, TDUnit.DAYS))
+        is TDUnit.MINUTES
+    )
+    assert find_smallest_unit((TDUnit.YEARS, TDUnit.WEEKS, TDUnit.DAYS)) is TDUnit.DAYS
+
+
+def test_smallest_unit_rdunit() -> None:
+    assert (
+        find_smallest_unit((RDUnit.YEARS, RDUnit.SECONDS, RDUnit.DAYS))
+        is RDUnit.SECONDS
+    )
+    assert find_smallest_unit((RDUnit.YEARS, RDUnit.DAYS)) is RDUnit.DAYS
+    assert (
+        find_smallest_unit((RDUnit.YEARS, RDUnit.MINUTES, RDUnit.DAYS))
+        is RDUnit.MINUTES
+    )
+    assert (
+        find_smallest_unit((RDUnit.YEARS, RDUnit.MONTHS, RDUnit.WEEKS)) is RDUnit.WEEKS
+    )
+
+
+def test_smallest_unit_invalid() -> None:
+    with pytest.raises(ValueError, match="Unknown units"):
+        find_smallest_unit(("years", "seconds", "days", "wibblies"))
+
+    class FAKEUnit(StrEnum):
+        YEARS = "years"
+        WEEKS = "weeks"
+        FOO = "foo"
+
+    assert find_smallest_unit((FAKEUnit.YEARS, FAKEUnit.WEEKS)) is FAKEUnit.WEEKS
+    with pytest.raises(ValueError, match="Unknown units"):
+        find_smallest_unit((FAKEUnit.YEARS, FAKEUnit.WEEKS, FAKEUnit.FOO))

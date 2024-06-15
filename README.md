@@ -18,12 +18,13 @@ Usage examples
 --------------
 
 `from_timedelta` creates a more human-friendly printable version of `timedelta`.
-
-    >>> delta = timedelta(weeks=53, hours=1, minutes=1)
-    >>> f"Update was {delta} ago"
-    'Update was 371 days, 1:01:00 ago'
-    >>> f"Update was {from_timedelta(delta)} ago"
-    'Update was 1 year, 6 days, 1 hour and 1 minute ago'
+```python
+>>> delta = timedelta(weeks=53, hours=1, minutes=1)
+>>> f"Update was {delta} ago"
+'Update was 371 days, 1:01:00 ago'
+>>> f"Update was {from_timedelta(delta)} ago"
+'Update was 1 year, 6 days, 1 hour and 1 minute ago'
+```
 
 For negative timedeltas, the default representation is more machine-friendly than 
 human-friendly: 
@@ -31,26 +32,30 @@ human-friendly:
 the weird but technically-correct 
 "negative one day plus 22 hours and 55 minutes"
 
-    >>> lunchtime = datetime(year=2015, month=5, day=27, hour=12)
-    >>> right_now = datetime(year=2015, month=5, day=27, hour=13, minute=5)
-    >>> f"{lunchtime - right_now}"
-    '-1 day, 22:55:00'
-    >>> f"{from_timedelta(lunchtime - right_now)}"
-    '-1 hour and 5 minutes'
+```python
+>>> lunchtime = datetime(year=2015, month=5, day=27, hour=12)
+>>> right_now = datetime(year=2015, month=5, day=27, hour=13, minute=5)
+>>> f"{lunchtime - right_now}"
+'-1 day, 22:55:00'
+>>> f"{from_timedelta(lunchtime - right_now)}"
+'-1 hour and 5 minutes'
+```
 
 `from_timedelta` has customization options
 
 Show all units even those without a value
-
-    >>> print(from_timedelta(timedelta(weeks=60, hours=1), showzero=True))
-    '1 year, 7 weeks, 6 days, 1 hour, 0 minutes, 0 seconds, 0 milliseconds and 0 microseconds'
+```python
+>>> print(from_timedelta(timedelta(weeks=60, hours=1), showzero=True))
+'1 year, 7 weeks, 6 days, 1 hour, 0 minutes, 0 seconds, 0 milliseconds and 0 microseconds'
+```
 
 Output using only specific units
 
-    >>> delta = timedelta(days=6, hours=23, minutes=59, seconds=59)
-    >>> print(from_timedelta(delta), units=['days', 'seconds'])
-    '6 days and 86399 seconds'
-
+```python
+>>> delta = timedelta(days=6, hours=23, minutes=59, seconds=59)
+>>> print(from_timedelta(delta), units=['days', 'seconds'])
+'6 days and 86399 seconds'
+```
 
 Contributing
 ------------

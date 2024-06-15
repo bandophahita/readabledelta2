@@ -12,7 +12,9 @@ Readable Timedelta (mark2)
 Installation
 ------------
 
-    pip install readabledelta2
+```console
+pip install readabledelta2
+```
 
 Usage examples
 --------------

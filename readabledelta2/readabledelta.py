@@ -8,7 +8,7 @@ https://github.com/wimglenn/readabledelta/blob/master/readabledelta.py
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from enum import Enum, StrEnum
+from enum import Enum
 from typing import overload
 
 from dateutil.relativedelta import relativedelta
@@ -23,7 +23,7 @@ class ExtendedEnum(Enum):
         return tuple(c.value for c in cls)
 
 
-class Style(StrEnum, ExtendedEnum):
+class Style(str, ExtendedEnum):
     NORMAL = "normal"
     SHORT = "short"
     ABBREV = "abbrev"
@@ -40,7 +40,7 @@ MILLISECONDS = "milliseconds"
 MICROSECONDS = "microseconds"
 
 
-class TDUnit(StrEnum, ExtendedEnum):
+class TDUnit(str, ExtendedEnum):
     YEARS = YEARS
     WEEKS = WEEKS
     DAYS = DAYS
@@ -52,7 +52,7 @@ class TDUnit(StrEnum, ExtendedEnum):
 
 
 # months are included here because relativedelta knows how to handle it.
-class RDUnit(StrEnum, ExtendedEnum):
+class RDUnit(str, ExtendedEnum):
     YEARS = YEARS
     MONTHS = MONTHS
     WEEKS = WEEKS
